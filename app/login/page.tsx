@@ -51,9 +51,12 @@ function Form() {
       <Link href="/" className="display text-xl font-semibold">
         DouceCreative
       </Link>
-      <h1 className="display text-4xl mt-10 mb-6">
+      <h1 className="display text-4xl mt-10 mb-2">
         {mode === "up" ? "Crear cuenta" : mode === "reset" ? "Recuperar acceso" : "Entrar"}
       </h1>
+      <p className="text-g4 mb-6">
+        {mode === "reset" ? "Te enviaremos un enlace por email." : "Inicia sesión o regístrate para pedir tu cita, recibir la confirmación y el recordatorio por email."}
+      </p>
 
       {mode !== "reset" && (
         <>

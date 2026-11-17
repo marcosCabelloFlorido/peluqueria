@@ -1,6 +1,5 @@
 "use client";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { addMonths, addDays, format, getDay, getDaysInMonth, parse } from "date-fns";
@@ -16,8 +15,7 @@ const KEY = "dc_booking";
 const ease = [0.22, 1, 0.36, 1] as const;
 const spring = { type: "spring", stiffness: 260, damping: 30 } as const;
 
-export default function Booking({ services, windowDays, loggedIn }: { services: Service[]; windowDays: number; loggedIn: boolean }) {
-  const router = useRouter();
+export default function Booking({ services, windowDays }: { services: Service[]; windowDays: number }) {
   const reduce = useReducedMotion();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [dir, setDir] = useState(1);
@@ -64,7 +62,6 @@ export default function Booking({ services, windowDays, loggedIn }: { services: 
   }
 
   function confirm() {
-    if (!loggedIn) { router.push("/login?next=/reservar"); return; }
     if (!day || !time) return;
     setError("");
     start(async () => {
@@ -135,7 +132,7 @@ export default function Booking({ services, windowDays, loggedIn }: { services: 
               <textarea id="note" className="field mt-1 py-3 min-h-24" maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} />
               {error && <p role="alert" className="mt-3 text-sm border border-ink rounded-xl px-3 py-2 flex gap-2 items-start"><Alert />{error}</p>}
               <Bar>
-                <button className="btn btn-primary" disabled={pending} onClick={confirm}>{loggedIn ? (pending ? "Reservando…" : "Confirmar cita") : "Entrar para confirmar"} <Arrow /></button>
+                <button className="btn btn-primary" disabled={pending} onClick={confirm}>{pending ? "Reservando…" : "Confirmar cita"} <Arrow /></button>
               </Bar>
             </>
           )}

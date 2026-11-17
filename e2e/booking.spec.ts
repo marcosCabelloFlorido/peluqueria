@@ -3,8 +3,17 @@ import { expect, test } from "@playwright/test";
 test("usuario nuevo reserva y cancela una cita", async ({ page }) => {
   const email = `e2e${Date.now()}@test.dev`;
 
-  // 1. Servicios (sin sesión)
+  // 0. Sin sesión se pide entrar o registrarse antes de reservar
   await page.goto("/reservar");
+  await expect(page).toHaveURL(/\/login/);
+  await page.getByRole("tab", { name: "Crear cuenta" }).click();
+  await page.getByPlaceholder("Nombre").fill("Cliente E2E");
+  await page.getByPlaceholder("Email").fill(email);
+  await page.getByPlaceholder("Contraseña").fill("secret123");
+  await page.locator("form").getByRole("button", { name: "Crear cuenta" }).click();
+
+  // 1. Servicios
+  await expect(page).toHaveURL(/\/reservar/);
   await page.getByRole("button", { name: /Barba/ }).click();
   await page.getByRole("button", { name: "Elegir fecha" }).click();
 
@@ -16,15 +25,7 @@ test("usuario nuevo reserva y cancela una cita", async ({ page }) => {
   await slot.click();
   await page.getByRole("button", { name: "Continuar" }).click();
 
-  // 3. Login pedido justo antes de confirmar; la selección se conserva
-  await page.getByRole("button", { name: /Entrar para confirmar/ }).click();
-  await expect(page).toHaveURL(/\/login/);
-  await page.getByRole("tab", { name: "Crear cuenta" }).click();
-  await page.getByPlaceholder("Nombre").fill("Cliente E2E");
-  await page.getByPlaceholder("Email").fill(email);
-  await page.getByPlaceholder("Contraseña").fill("secret123");
-  await page.locator("form").getByRole("button", { name: "Crear cuenta" }).click();
-
+  // 3. Confirmar
   await expect(page.getByRole("heading", { name: "Confirma tu cita" })).toBeVisible();
   await page.getByRole("button", { name: "Confirmar cita" }).click();
   await expect(page.getByRole("heading", { name: "¡Cita confirmada!" })).toBeVisible();
