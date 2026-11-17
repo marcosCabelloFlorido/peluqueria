@@ -3,7 +3,7 @@ import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabaseBrowser } from "@/lib/supabase/client";
-import { Alert, Arrow, GoogleG } from "@/components/Icons";
+import { Alert, Arrow } from "@/components/Icons";
 
 function Form() {
   const next = useSearchParams().get("next") || "/reservar";
@@ -13,13 +13,6 @@ function Form() {
   const [busy, setBusy] = useState(false);
   const sb = supabaseBrowser();
   const origin = typeof window !== "undefined" ? window.location.origin : "";
-
-  async function google() {
-    await sb.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}` },
-    });
-  }
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -64,13 +57,6 @@ function Form() {
 
       {mode !== "reset" && (
         <>
-          <button onClick={google} className="btn btn-secondary w-full">
-            <GoogleG />
-            Continuar con Google
-          </button>
-          <p className="text-center text-g3 text-sm my-4" aria-hidden="true">
-            o
-          </p>
           <div role="tablist" className="seg mb-5">
             {(["in", "up"] as const).map((m) => (
               <button

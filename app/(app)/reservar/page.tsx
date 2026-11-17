@@ -8,6 +8,5 @@ export default async function Reservar() {
     sb.from("settings").select("booking_window_days").single(),
     sb.auth.getUser(),
   ]);
-  const { data: p } = user ? await sb.from("profiles").select("google_calendar_connected").eq("id", user.id).single() : { data: null };
-  return <Booking services={services ?? []} windowDays={settings?.booking_window_days ?? 30} loggedIn={!!user} calendarConnected={!!p?.google_calendar_connected} />;
+  return <Booking services={services ?? []} windowDays={settings?.booking_window_days ?? 30} loggedIn={!!user} />;
 }

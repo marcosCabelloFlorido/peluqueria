@@ -1,11 +1,9 @@
 import Link from "next/link";
-import { Alert, Check, GoogleCalendar } from "@/components/Icons";
 import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
-import { signOut, updateProfile, deleteAccount, disconnectGoogle } from "@/app/actions";
+import { signOut, updateProfile, deleteAccount } from "@/app/actions";
 
-export default async function Perfil({ searchParams }: { searchParams: Promise<{ gcal?: string }> }) {
-  const gcal = (await searchParams).gcal;
+export default async function Perfil() {
   const sb = await supabaseServer();
   const { data: { user } } = await sb.auth.getUser();
   if (!user) redirect("/login?next=/perfil");
@@ -38,21 +36,6 @@ export default async function Perfil({ searchParams }: { searchParams: Promise<{
         </label>
         <button className="btn btn-primary mt-2">Guardar cambios</button>
       </form>
-
-      <section className="card p-4 mt-6">
-        <p className="font-medium inline-flex items-center gap-2"><GoogleCalendar />Google Calendar</p>
-        <p className="text-sm text-g4 mt-1">
-          {p?.google_calendar_connected ? "Conectado. Tus citas se añaden y se borran solas." : "Conéctalo para añadir tus citas automáticamente."}
-        </p>
-        {gcal === "ok" && <p role="status" className="text-sm mt-2 inline-flex gap-1 items-center"><Check />Conectado</p>}
-        {(gcal === "denied" || gcal === "error") && <p role="alert" className="text-sm mt-2 border border-ink rounded-xl px-3 py-2 flex gap-2 items-start"><Alert />No se pudo conectar. Inténtalo de nuevo.</p>}
-        {gcal === "unconfigured" && <p role="alert" className="text-sm mt-2 border border-ink rounded-xl px-3 py-2 flex gap-2 items-start"><Alert />Google no está configurado en este entorno.</p>}
-        {p?.google_calendar_connected ? (
-          <form action={disconnectGoogle} className="mt-3"><button className="btn btn-secondary w-full">Desconectar</button></form>
-        ) : (
-          <a href="/api/google/connect" className="btn btn-secondary w-full mt-3"><GoogleCalendar />Conectar Google Calendar</a>
-        )}
-      </section>
 
       {p?.role === "admin" && (
         <Link href="/admin" className="btn btn-secondary w-full mt-6">Panel del peluquero</Link>

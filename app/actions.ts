@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { supabaseServer, supabaseService } from "@/lib/supabase/server";
 import { getAvailableSlots, getMonthAvailability } from "@/lib/availability";
 import { localToDate } from "@/lib/time";
-import { deleteEvent, disconnect, insertEvent } from "@/lib/google";
 import { adminNewEmail, cancellationEmail, confirmationEmail, send } from "@/lib/email";
 
 const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
@@ -41,12 +40,7 @@ async function loadAppt(id: string) {
   return { appt: { ...data, services }, email: u.user?.email, name: p?.full_name ?? "", notify: p?.email_reminders ?? true };
 }
 
-async function dropEvent(id: string) {
-  const { data } = await supabaseService().from("appointments").select("user_id,google_event_id").eq("id", id).single();
-  if (data?.google_event_id) await deleteEvent(data.user_id, data.google_event_id);
-}
-
-export async function book(input: { serviceIds: string[]; day: string; time: string; note?: string; addToCalendar?: boolean }) {
+export async function book(input: { serviceIds: string[]; day: string; time: string; note?: string }) {
   const sb = await supabaseServer();
   const startsAt = localToDate(day.parse(input.day), z.string().regex(/^\d{2}:\d{2}$/).parse(input.time));
   const { data, error } = await sb.rpc("book_appointment", {
@@ -54,29 +48,22 @@ export async function book(input: { serviceIds: string[]; day: string; time: str
   });
   if (error) return { error: msg(error), refresh: error.message === "slot_taken" };
   let ends = startsAt.toISOString();
-  let calendar: "added" | "failed" | "off" = "off";
   try {
     const l = await loadAppt(data as string);
     if (l) {
       ends = l.appt.ends_at;
-      if (input.addToCalendar) {
-        const ev = await insertEvent(l.appt.user_id, { summary: `DouceCreative — ${l.appt.services}`, start: l.appt.starts_at, end: l.appt.ends_at, location: process.env.NEXT_PUBLIC_SHOP_ADDRESS });
-        if (ev) await supabaseService().from("appointments").update({ google_event_id: ev }).eq("id", l.appt.id);
-        calendar = ev ? "added" : "failed";
-      }
       await send(l.email, "Cita confirmada · DouceCreative", confirmationEmail(l.appt));
       await send(process.env.ADMIN_EMAIL, "Nueva cita", adminNewEmail(l.appt, l.name));
     }
   } catch (e) { console.error("[book] email", e); }
   revalidatePath("/citas");
-  return { id: data as string, starts_at: startsAt.toISOString(), ends_at: ends, calendar };
+  return { id: data as string, starts_at: startsAt.toISOString(), ends_at: ends };
 }
 
 export async function cancel(id: string) {
   const sb = await supabaseServer();
   const { error } = await sb.rpc("cancel_appointment", { p_id: id });
   if (error) return { error: msg(error) };
-  await dropEvent(id);
   try {
     const l = await loadAppt(id);
     if (l) {
@@ -100,13 +87,6 @@ export async function updateProfile(f: FormData) {
   revalidatePath("/perfil");
 }
 
-export async function disconnectGoogle() {
-  const sb = await supabaseServer();
-  const { data: { user } } = await sb.auth.getUser();
-  if (user) await disconnect(user.id);
-  revalidatePath("/perfil");
-}
-
 export async function signOut() {
   const sb = await supabaseServer();
   await sb.auth.signOut();
@@ -116,7 +96,6 @@ export async function deleteAccount() {
   const sb = await supabaseServer();
   const { data: { user } } = await sb.auth.getUser();
   if (!user) return;
-  await disconnect(user.id);
   await supabaseService().auth.admin.deleteUser(user.id);
   await sb.auth.signOut();
 }
@@ -135,7 +114,6 @@ export async function adminSetStatus(id: string, status: "completed" | "no_show"
   const { error } = await sb.from("appointments").update({ status }).eq("id", id);
   if (error) return { error: error.message };
   if (status === "cancelled") {
-    await dropEvent(id);
     const l = await loadAppt(id);
     if (l) await send(l.email, "Cita cancelada · DouceCreative", cancellationEmail(l.appt));
   }

@@ -7,8 +7,8 @@ import { addMonths, addDays, format, getDay, getDaysInMonth, parse } from "date-
 import { es } from "date-fns/locale";
 import { book, fetchMonth, fetchSlots } from "@/app/actions";
 import { euro, todayMadrid } from "@/lib/time";
-import { googleCalendarAddUrl, whatsappUrl } from "@/lib/calendar";
-import { Alert, Arrow, Back, Check, GoogleCalendar, Next, WhatsApp } from "./Icons";
+import { whatsappUrl } from "@/lib/calendar";
+import { Alert, Arrow, Back, Next, WhatsApp } from "./Icons";
 
 type Service = { id: string; slug: string; name: string; price_cents: number; duration_min: number; exclusive_group: string | null };
 type Saved = { ids: string[]; day: string | null; time: string | null; step: 1 | 2 | 3; note: string };
@@ -16,7 +16,7 @@ const KEY = "dc_booking";
 const ease = [0.22, 1, 0.36, 1] as const;
 const spring = { type: "spring", stiffness: 260, damping: 30 } as const;
 
-export default function Booking({ services, windowDays, loggedIn, calendarConnected }: { services: Service[]; windowDays: number; loggedIn: boolean; calendarConnected: boolean }) {
+export default function Booking({ services, windowDays, loggedIn }: { services: Service[]; windowDays: number; loggedIn: boolean }) {
   const router = useRouter();
   const reduce = useReducedMotion();
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -26,10 +26,9 @@ export default function Booking({ services, windowDays, loggedIn, calendarConnec
   const [time, setTime] = useState<string | null>(null);
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
-  const [done, setDone] = useState<{ id: string; starts_at: string; ends_at: string; services: string; day: string; time: string; calendar: "added" | "failed" | "off" } | null>(null);
+  const [done, setDone] = useState<{ id: string; starts_at: string; ends_at: string; services: string; day: string; time: string } | null>(null);
   const [pending, start] = useTransition();
   const [hydrated, setHydrated] = useState(false);
-  const [addCal, setAddCal] = useState(true);
 
   const chosen = services.filter((s) => ids.includes(s.id));
   const total = chosen.reduce((a, s) => a + s.price_cents, 0);
@@ -69,14 +68,14 @@ export default function Booking({ services, windowDays, loggedIn, calendarConnec
     if (!day || !time) return;
     setError("");
     start(async () => {
-      const r = await book({ serviceIds: ids, day, time, note, addToCalendar: calendarConnected && addCal });
+      const r = await book({ serviceIds: ids, day, time, note });
       if ("error" in r && r.error) {
         setError(r.error);
         if (r.refresh) { setTime(null); go(2); }
         return;
       }
       try { sessionStorage.removeItem(KEY); } catch {}
-      setDone({ id: r.id!, starts_at: r.starts_at!, ends_at: r.ends_at!, services: chosen.map((s) => s.name).join(" + "), day, time, calendar: r.calendar ?? "off" });
+      setDone({ id: r.id!, starts_at: r.starts_at!, ends_at: r.ends_at!, services: chosen.map((s) => s.name).join(" + "), day, time });
     });
   }
 
@@ -134,12 +133,6 @@ export default function Booking({ services, windowDays, loggedIn, calendarConnec
               </div>
               <label className="block mt-5 text-sm text-g4" htmlFor="note">Nota para el peluquero (opcional)</label>
               <textarea id="note" className="field mt-1 py-3 min-h-24" maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} />
-              {loggedIn && calendarConnected && (
-                <label className="flex items-center gap-3 min-h-11 mt-3">
-                  <input type="checkbox" className="size-5 accent-white" checked={addCal} onChange={(e) => setAddCal(e.target.checked)} />
-                  Añadir a mi Google Calendar
-                </label>
-              )}
               {error && <p role="alert" className="mt-3 text-sm border border-ink rounded-xl px-3 py-2 flex gap-2 items-start"><Alert />{error}</p>}
               <Bar>
                 <button className="btn btn-primary" disabled={pending} onClick={confirm}>{loggedIn ? (pending ? "Reservando…" : "Confirmar cita") : "Entrar para confirmar"} <Arrow /></button>
@@ -259,7 +252,7 @@ function DayTime(p: { duration: number; windowDays: number; day: string | null; 
   );
 }
 
-function Success({ d }: { d: { id: string; starts_at: string; ends_at: string; services: string; day: string; time: string; calendar: "added" | "failed" | "off" } }) {
+function Success({ d }: { d: { id: string; starts_at: string; ends_at: string; services: string; day: string; time: string } }) {
   const label = format(parse(d.day, "yyyy-MM-dd", new Date()), "EEEE d 'de' MMMM", { locale: es });
   return (
     <div className="text-center pt-10">
@@ -270,10 +263,9 @@ function Success({ d }: { d: { id: string; starts_at: string; ends_at: string; s
       <h1 className="display text-4xl mt-6">¡Cita confirmada!</h1>
       <p className="text-g4 mt-2 first-letter:uppercase">{label} · {d.time}</p>
       <p className="text-g4 text-sm">{d.services}</p>
-      {d.calendar === "added" && <p className="mt-3 text-sm inline-flex gap-1 items-center"><Check />Añadida a tu Google Calendar</p>}
+      <p className="mt-3 text-sm text-g4">Te hemos enviado la confirmación por email y te recordaremos antes de la cita.</p>
       <div className="mt-8 flex flex-col gap-2 items-center">
         <Link href="/citas" className="btn btn-primary">Ver mis citas <Arrow /></Link>
-        {d.calendar !== "added" && <a className="btn btn-secondary w-full" href={googleCalendarAddUrl(d.id)}><GoogleCalendar />Añadir a Google Calendar</a>}
         <a className="link" target="_blank" rel="noopener" href={whatsappUrl(`Hola, tengo cita el ${label} a las ${d.time}.`)}><WhatsApp />&nbsp;Escribir por WhatsApp</a>
       </div>
     </div>

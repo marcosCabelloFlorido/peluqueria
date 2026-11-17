@@ -10,7 +10,7 @@
 1. Un solo botón primario por pantalla; siempre claro cuál es el siguiente paso.
 2. Cero fricción: login solo justo antes de confirmar; la selección no se pierde.
 3. La BD es la fuente de verdad (sin dobles reservas).
-4. Funciona sin Google Calendar; Google nunca bloquea una reserva.
+4. Sin integraciones externas: confirmación y recordatorio por email.
 
 **Anti-referencias:** plantillas SaaS, tarjetas con icono + título + texto repetidas, degradados, sombras pesadas, rojo para errores.
 

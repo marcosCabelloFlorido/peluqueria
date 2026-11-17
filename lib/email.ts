@@ -24,7 +24,7 @@ export async function send(to: string | undefined, subject: string, html: string
 }
 
 export const confirmationEmail = (a: Appt) =>
-  shell("Cita confirmada", details(a) + btn(`${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/api/google/add/${a.id}`, "Añadir a Google Calendar"));
+  shell("Cita confirmada", details(a) + btn(`${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/citas`, "Ver mis citas"));
 export const reminderEmail = (a: Appt) => shell("Te esperamos pronto", details(a));
 export const cancellationEmail = (a: Appt) => shell("Cita cancelada", details(a));
 export const adminNewEmail = (a: Appt, name: string) => shell("Nueva cita", `<p>${name}</p>` + details(a));
