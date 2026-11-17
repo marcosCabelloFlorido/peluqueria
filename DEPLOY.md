@@ -11,7 +11,7 @@ Estado: `npm run deploy` está preparado (`wrangler.jsonc`, `worker.ts`, `open-n
 
 ## 2. Cloudflare
 1. `npx wrangler login`.
-2. Crea `.env.production` (solo variables públicas, se incrustan en build):
+2. Crea `.env.production.local` (gana a `.env.local`; solo variables públicas, se incrustan en build):
    ```
    NEXT_PUBLIC_SUPABASE_URL=https://<REF>.supabase.co
    NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon>
