@@ -8,10 +8,10 @@
   "observability": { "enabled": true },
   // Recordatorios y keep-alive de Supabase cada 15 min
   "vars": {
-    "SITE_URL": "https://doucecreative.marcoscabelloflorido084.workers.dev",
+    "SITE_URL": "https://doucecreative.douce-cr.workers.dev",
     "NEXT_PUBLIC_SUPABASE_URL": "https://ztzfobhojespuddohjxl.supabase.co",
     "NEXT_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp0emZvYmhvamVzcHVkZG9oanhsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ5NDU1NjAsImV4cCI6MjExMDUyMTU2MH0.t7yV4KECtm8AOoXG8Er1T1R1pRRa-ZvEZyfW7Zh7GNE",
-    "NEXT_PUBLIC_SITE_URL": "https://doucecreative.marcoscabelloflorido084.workers.dev",
+    "NEXT_PUBLIC_SITE_URL": "https://doucecreative.douce-cr.workers.dev",
     "NEXT_PUBLIC_WHATSAPP_PHONE": "34600000000",
     "NEXT_PUBLIC_SHOP_ADDRESS": "DouceCreative"
   },
