@@ -8,7 +8,7 @@ import { es } from "date-fns/locale";
 import { book, fetchMonth, fetchSlots } from "@/app/actions";
 import { euro, todayMadrid } from "@/lib/time";
 import { googleCalendarAddUrl, whatsappUrl } from "@/lib/calendar";
-import { Alert, Arrow, Back, Check, Next, WhatsApp } from "./Icons";
+import { Alert, Arrow, Back, Check, GoogleCalendar, Next, WhatsApp } from "./Icons";
 
 type Service = { id: string; slug: string; name: string; price_cents: number; duration_min: number; exclusive_group: string | null };
 type Saved = { ids: string[]; day: string | null; time: string | null; step: 1 | 2 | 3; note: string };
@@ -128,7 +128,6 @@ export default function Booking({ services, windowDays, loggedIn, calendarConnec
                 <ul className="flex flex-col gap-1">
                   {chosen.map((s) => <li key={s.id} className="flex justify-between"><span>{s.name}</span><span className="text-g4">{euro(s.price_cents)}</span></li>)}
                 </ul>
-                <hr className="border-g2" />
                 <p className="display text-2xl first-letter:uppercase">{format(parse(day, "yyyy-MM-dd", new Date()), "EEEE d 'de' MMMM", { locale: es })}</p>
                 <p>{time} · {duration} min</p>
                 <p className="flex justify-between font-medium"><span>Total</span><span>{euro(total)}</span></p>
@@ -274,7 +273,7 @@ function Success({ d }: { d: { id: string; starts_at: string; ends_at: string; s
       {d.calendar === "added" && <p className="mt-3 text-sm inline-flex gap-1 items-center"><Check />Añadida a tu Google Calendar</p>}
       <div className="mt-8 flex flex-col gap-2 items-center">
         <Link href="/citas" className="btn btn-primary">Ver mis citas <Arrow /></Link>
-        {d.calendar !== "added" && <a className="btn btn-secondary w-full" href={googleCalendarAddUrl(d.id)}>Añadir a Google Calendar</a>}
+        {d.calendar !== "added" && <a className="btn btn-secondary w-full" href={googleCalendarAddUrl(d.id)}><GoogleCalendar />Añadir a Google Calendar</a>}
         <a className="link" target="_blank" rel="noopener" href={whatsappUrl(`Hola, tengo cita el ${label} a las ${d.time}.`)}><WhatsApp />&nbsp;Escribir por WhatsApp</a>
       </div>
     </div>

@@ -3,7 +3,7 @@ import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabaseBrowser } from "@/lib/supabase/client";
-import { Alert, Arrow } from "@/components/Icons";
+import { Alert, Arrow, GoogleG } from "@/components/Icons";
 
 function Form() {
   const next = useSearchParams().get("next") || "/reservar";
@@ -65,20 +65,20 @@ function Form() {
       {mode !== "reset" && (
         <>
           <button onClick={google} className="btn btn-secondary w-full">
-            <span aria-hidden="true" className="display text-lg font-semibold">G</span>
+            <GoogleG />
             Continuar con Google
           </button>
           <p className="text-center text-g3 text-sm my-4" aria-hidden="true">
             o
           </p>
-          <div role="tablist" className="grid grid-cols-2 mb-5 border-b border-g2">
+          <div role="tablist" className="seg mb-5">
             {(["in", "up"] as const).map((m) => (
               <button
                 key={m}
                 role="tab"
                 aria-selected={mode === m}
                 onClick={() => setMode(m)}
-                className={`h-12 text-sm ${mode === m ? "border-b-2 border-ink font-medium" : "text-g4"}`}
+                className="cursor-pointer"
               >
                 {m === "in" ? "Entrar" : "Crear cuenta"}
               </button>

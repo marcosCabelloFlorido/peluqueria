@@ -31,7 +31,7 @@ export default function Welcome() {
         {phase === "splash" && (
           <motion.div
             key="splash"
-            className="fixed inset-0 z-10 grid place-items-center bg-ink text-paper"
+            className="fixed inset-0 z-10 grid place-items-center bg-paper text-ink"
             exit={{ clipPath: "inset(0 0 100% 0)", transition: { duration: 0.7, ease } }}
           >
             <h1 className="display text-4xl font-semibold flex" aria-label="DouceCreative">
@@ -62,12 +62,14 @@ export default function Welcome() {
           <p className="mt-5 text-g4">Reserva tu cita en menos de un minuto.</p>
         </motion.div>
         <motion.div className="flex flex-col items-center gap-2" initial={false} animate={show} transition={{ duration: 0.6, ease, delay: 0.4 }}>
-          <Link href="/reservar" className="btn btn-primary">
-            Reservar cita <Arrow />
-          </Link>
-          <Link href="/login" className="link">
-            Ya tengo cuenta
-          </Link>
+          <div className="w-full grid grid-cols-2 gap-2">
+            <Link href="/reservar" className="btn btn-primary">
+              Pedir cita <Arrow />
+            </Link>
+            <Link href="/login?next=/citas" className="btn btn-secondary">
+              Mis citas
+            </Link>
+          </div>
         </motion.div>
       </main>
     </div>

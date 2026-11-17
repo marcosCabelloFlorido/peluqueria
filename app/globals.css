@@ -44,13 +44,13 @@ body { font-variant-numeric: tabular-nums; font-family: var(--font-sans); min-he
 .field { width: 100%; min-height: 48px; border: 1px solid var(--gray-2); border-radius: 8px; padding: 0 1rem; background: rgb(255 255 255 / .03); color: var(--ink); }
 .field:focus { outline: 1px solid var(--gray-3); outline-offset: 0; border-color: var(--gray-3); box-shadow: 0 0 0 4px rgb(255 255 255 / .08); }
 :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
-.sticky-bar { position: fixed; left: 0; right: 0; bottom: calc(64px + env(safe-area-inset-bottom)); padding: .75rem 1rem;
-  background: rgb(0 0 0 / .8); backdrop-filter: blur(12px); border-top: 1px solid var(--gray-2); z-index: 20; }
+.sticky-bar { position: fixed; left: 0; right: 0; bottom: calc(84px + env(safe-area-inset-bottom)); padding: 1.5rem 1rem .5rem;
+  background: linear-gradient(to top, #000 55%, transparent); z-index: 20; }
 .skeleton { background: linear-gradient(90deg, var(--gray-1), var(--gray-2), var(--gray-1)); background-size: 200% 100%; animation: sk 1.2s linear infinite; border-radius: 12px; }
 @keyframes sk { to { background-position: -200% 0; } }
 
 .sheet { margin: auto auto 0; width: 100%; max-width: 28rem; border: 0; color: var(--ink);
-  border-radius: 16px 16px 0 0; border-top: 1px solid var(--gray-2); background: #0a0a0b; padding: 1.5rem 1.5rem calc(1.5rem + env(safe-area-inset-bottom)); }
+  border-radius: 16px 16px 0 0; background: #0a0a0b; padding: 1.5rem 1.5rem calc(1.5rem + env(safe-area-inset-bottom)); }
 .sheet:modal { overscroll-behavior: contain; }
 .sheet::backdrop { background: rgb(0 0 0 / .7); overflow: hidden; overscroll-behavior: contain; }
 .sheet[open] { animation: sheet-in .35s var(--ease); }
@@ -62,3 +62,27 @@ input:user-invalid, textarea:user-invalid { border-color: var(--gray-4); outline
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }
+
+/* navbar flotante */
+.dock { position: fixed; z-index: 30; left: 0; right: 0; bottom: calc(12px + env(safe-area-inset-bottom)); padding: 0 1rem; pointer-events: none; }
+.dock > ul { pointer-events: auto; margin: 0 auto; max-width: 24rem; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 6px;
+  border-radius: 16px; background: rgb(18 18 20 / .85); backdrop-filter: blur(16px); box-shadow: 0 0 0 1px rgb(255 255 255 / .08), 0 12px 32px rgb(0 0 0 / .6); }
+
+/* control segmentado (sustituye a pestañas con barra) */
+.seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 2px; padding: 3px; border-radius: 10px; background: rgb(255 255 255 / .06); }
+.seg > * { display: grid; place-items: center; height: 38px; border-radius: 8px; font-size: .875rem; color: var(--gray-4); transition: background-color .2s, color .2s; }
+.seg > [aria-selected="true"] { background: rgb(255 255 255 / .12); color: var(--ink); font-weight: 500; }
+
+/* interruptor */
+.switch { appearance: none; width: 40px; height: 24px; border-radius: 999px; background: rgb(255 255 255 / .14); position: relative; cursor: pointer; flex: none; transition: background-color .2s; }
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: var(--ink); transition: transform .25s var(--ease), background-color .2s; }
+.switch:checked { background: var(--ink); }
+.switch:checked::after { transform: translateX(16px); background: var(--paper); }
+
+/* campo con unidad dentro */
+.unit { position: relative; display: block; }
+.unit .field { padding-right: 3rem; text-align: right; font-variant-numeric: tabular-nums; font-size: 1.125rem; }
+.unit > span { position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); color: var(--gray-3); font-size: .875rem; pointer-events: none; }
+.chip { display: inline-flex; align-items: center; gap: .25rem; min-height: 32px; padding: 0 .625rem; border-radius: 6px; background: rgb(255 255 255 / .06); font-size: .8125rem; }
+details > summary { list-style: none; cursor: pointer; }
+details > summary::-webkit-details-marker { display: none; }

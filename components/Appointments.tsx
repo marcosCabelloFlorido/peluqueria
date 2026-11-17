@@ -5,7 +5,7 @@ import { motion } from "motion/react";
 import { cancel } from "@/app/actions";
 import { euro, fmt } from "@/lib/time";
 import { googleCalendarAddUrl, whatsappUrl } from "@/lib/calendar";
-import { Alert, Arrow, Check, WhatsApp } from "./Icons";
+import { Alert, Arrow, Check, GoogleCalendar, WhatsApp } from "./Icons";
 
 type A = { id: string; starts_at: string; ends_at: string; total_cents: number; status: "confirmed" | "cancelled" | "completed" | "no_show"; services: string; inCal: boolean };
 const LABEL = { confirmed: "Confirmada", cancelled: "Cancelada", completed: "Completada", no_show: "No presentado" };
@@ -28,9 +28,9 @@ export default function Appointments({ list, cancelLimitMin, cal }: { list: A[];
   return (
     <>
       {cal === "error" && <p role="alert" className="mb-4 text-sm border border-g2 rounded-lg px-3 py-2 flex gap-2 items-start"><Alert />No se pudo añadir a Google Calendar.</p>}
-      <div role="tablist" className="grid grid-cols-2 border-b border-g2 mb-5">
+      <div role="tablist" className="seg mb-5">
         {(["next", "past"] as const).map((t) => (
-          <button key={t} role="tab" aria-selected={tab === t} onClick={() => setTab(t)} className={`h-12 text-sm ${tab === t ? "border-b-2 border-ink font-medium" : "text-g4"}`}>
+          <button key={t} role="tab" aria-selected={tab === t} onClick={() => setTab(t)} className="cursor-pointer">
             {t === "next" ? "Próximas" : "Historial"}
           </button>
         ))}
@@ -63,7 +63,7 @@ export default function Appointments({ list, cancelLimitMin, cal }: { list: A[];
                   {canCancel && <button className="btn btn-secondary !min-h-11 !px-4 text-sm" onClick={() => { setErr(""); setTarget(a); }}>Cancelar</button>}
                   {a.inCal
                     ? <span className="text-sm text-g4 inline-flex gap-1 items-center min-h-11"><Check />En Google Calendar</span>
-                    : <a className="link text-sm" href={googleCalendarAddUrl(a.id)}>Añadir a Google Calendar</a>}
+                    : <a className="btn btn-secondary !min-h-11 !px-4 text-sm" href={googleCalendarAddUrl(a.id)}><GoogleCalendar size={18} />Añadir a Google Calendar</a>}
                   <a className="link text-sm" target="_blank" rel="noopener" href={whatsappUrl(`Hola, tengo cita el ${label}.`)}><WhatsApp />&nbsp;WhatsApp</a>
                 </div>
               )}

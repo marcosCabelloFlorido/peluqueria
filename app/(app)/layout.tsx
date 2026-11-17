@@ -17,11 +17,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <header className="flex items-center justify-between px-5 pt-[calc(1rem+env(safe-area-inset-top))] pb-2">
         <span className="display text-xl font-semibold">DouceCreative</span>
         <a href={whatsappUrl("Hola, te escribo desde la app de DouceCreative.")} target="_blank" rel="noopener" aria-label="Escribir por WhatsApp"
-           className="grid place-items-center size-11 rounded-full border border-g2"><WhatsApp /></a>
+           className="grid place-items-center size-11 rounded-full bg-white/[.06] hover:bg-white/10 transition-colors"><WhatsApp /></a>
       </header>
       <main className="px-5">{children}</main>
-      <nav aria-label="Principal" className="fixed bottom-0 inset-x-0 z-30 bg-paper border-t border-g2 pb-[env(safe-area-inset-bottom)]">
-        <ul className="mx-auto max-w-md grid grid-cols-3">
+      <nav aria-label="Principal" className="dock">
+        <ul>
           {tabs.map((t) => (
             <li key={t.href}>
               <NavLink href={user || t.href === "/reservar" ? t.href : `/login?next=${t.href}`} to={t.href} label={t.label} d={t.d} />

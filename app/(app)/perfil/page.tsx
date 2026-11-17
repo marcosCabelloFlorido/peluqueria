@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Alert, Check } from "@/components/Icons";
+import { Alert, Check, GoogleCalendar } from "@/components/Icons";
 import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
 import { signOut, updateProfile, deleteAccount, disconnectGoogle } from "@/app/actions";
@@ -40,7 +40,7 @@ export default async function Perfil({ searchParams }: { searchParams: Promise<{
       </form>
 
       <section className="card p-4 mt-6">
-        <p className="font-medium">Google Calendar</p>
+        <p className="font-medium inline-flex items-center gap-2"><GoogleCalendar />Google Calendar</p>
         <p className="text-sm text-g4 mt-1">
           {p?.google_calendar_connected ? "Conectado. Tus citas se añaden y se borran solas." : "Conéctalo para añadir tus citas automáticamente."}
         </p>
@@ -50,7 +50,7 @@ export default async function Perfil({ searchParams }: { searchParams: Promise<{
         {p?.google_calendar_connected ? (
           <form action={disconnectGoogle} className="mt-3"><button className="btn btn-secondary w-full">Desconectar</button></form>
         ) : (
-          <a href="/api/google/connect" className="btn btn-secondary w-full mt-3">Conectar Google Calendar</a>
+          <a href="/api/google/connect" className="btn btn-secondary w-full mt-3"><GoogleCalendar />Conectar Google Calendar</a>
         )}
       </section>
 
