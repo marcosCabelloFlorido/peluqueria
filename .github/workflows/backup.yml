@@ -1,0 +1,21 @@
+name: Backup semanal de la BD
+on:
+  schedule:
+    - cron: "0 3 * * 0"
+  workflow_dispatch:
+
+jobs:
+  dump:
+    runs-on: ubuntu-latest
+    steps:
+      - name: pg_dump
+        run: |
+          sudo apt-get install -y postgresql-client >/dev/null
+          pg_dump "${{ secrets.SUPABASE_DB_URL }}" --no-owner --schema=public -Fc -f backup.dump
+      - name: Cifrar
+        run: openssl enc -aes-256-cbc -pbkdf2 -salt -in backup.dump -out backup.dump.enc -pass pass:"${{ secrets.BACKUP_PASSPHRASE }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: db-backup-${{ github.run_id }}
+          path: backup.dump.enc
+          retention-days: 90

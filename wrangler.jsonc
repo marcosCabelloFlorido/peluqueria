@@ -1,0 +1,13 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "doucecreative",
+  "main": "worker.ts",
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+  "observability": { "enabled": true },
+  // Recordatorios y keep-alive de Supabase cada 15 min
+  "vars": { "SITE_URL": "https://REEMPLAZAR-DOMINIO" },
+  "triggers": { "crons": ["*/15 * * * *"] }
+  // Variables NEXT_PUBLIC_* se leen en build (.env.production). Secretos: `wrangler secret put <NOMBRE>`.
+}

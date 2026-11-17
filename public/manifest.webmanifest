@@ -1,0 +1,12 @@
+{
+  "name": "DouceCreative",
+  "short_name": "DouceCreative",
+  "start_url": "/reservar",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0a0a0a",
+  "lang": "es",
+  "icons": [
+    { "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
