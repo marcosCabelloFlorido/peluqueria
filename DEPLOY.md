@@ -35,7 +35,7 @@ Estado: `npm run deploy` está preparado (`wrangler.jsonc`, `worker.ts`, `open-n
 4. Copia **Client ID** y **Client secret**:
    - Nube: Supabase → Authentication → Providers → Google → activar y pegar ambos. Además `wrangler secret put GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`.
    - Local: `.env.local` y `supabase/.env`; en `supabase/config.toml` `[auth.external.google] enabled = true`; `npx supabase stop && npx supabase start`.
-5. Verificación de Google (para salir de "app no verificada" / límite de 100 usuarios): requiere dominio verificado y política publicada. Mientras, sin verificar, funciona con tus usuarios de prueba; sin conectar Calendar siempre queda enlace + .ics.
+5. Verificación de Google (para salir de "app no verificada" / límite de 100 usuarios): requiere dominio verificado y política publicada. Mientras, sin verificar, funciona con tus usuarios de prueba.
 
 ## 4. Resend (emails)
 Verifica tu dominio (SPF, DKIM, DMARC) y pon `EMAIL_FROM="DouceCreative <citas@tudominio.com>"`.

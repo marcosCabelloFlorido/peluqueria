@@ -4,13 +4,13 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { motion } from "motion/react";
 import { cancel } from "@/app/actions";
 import { euro, fmt } from "@/lib/time";
-import { googleCalendarUrl, whatsappUrl } from "@/lib/calendar";
-import { Alert, Arrow, WhatsApp } from "./Icons";
+import { googleCalendarAddUrl, whatsappUrl } from "@/lib/calendar";
+import { Alert, Arrow, Check, WhatsApp } from "./Icons";
 
-type A = { id: string; starts_at: string; ends_at: string; total_cents: number; status: "confirmed" | "cancelled" | "completed" | "no_show"; services: string };
+type A = { id: string; starts_at: string; ends_at: string; total_cents: number; status: "confirmed" | "cancelled" | "completed" | "no_show"; services: string; inCal: boolean };
 const LABEL = { confirmed: "Confirmada", cancelled: "Cancelada", completed: "Completada", no_show: "No presentado" };
 
-export default function Appointments({ list, cancelLimitMin }: { list: A[]; cancelLimitMin: number }) {
+export default function Appointments({ list, cancelLimitMin, cal }: { list: A[]; cancelLimitMin: number; cal?: string }) {
   const [tab, setTab] = useState<"next" | "past">("next");
   const [target, setTarget] = useState<A | null>(null);
   const [err, setErr] = useState("");
@@ -27,6 +27,7 @@ export default function Appointments({ list, cancelLimitMin }: { list: A[]; canc
 
   return (
     <>
+      {cal === "error" && <p role="alert" className="mb-4 text-sm border border-g2 rounded-lg px-3 py-2 flex gap-2 items-start"><Alert />No se pudo añadir a Google Calendar.</p>}
       <div role="tablist" className="grid grid-cols-2 border-b border-g2 mb-5">
         {(["next", "past"] as const).map((t) => (
           <button key={t} role="tab" aria-selected={tab === t} onClick={() => setTab(t)} className={`h-12 text-sm ${tab === t ? "border-b-2 border-ink font-medium" : "text-g4"}`}>
@@ -53,15 +54,16 @@ export default function Appointments({ list, cancelLimitMin }: { list: A[]; canc
                   <p className="display text-3xl first-letter:uppercase leading-none">{fmt(a.starts_at, "EEE d MMM")}</p>
                   <p className="mt-1 text-lg">{fmt(a.starts_at, "HH:mm")}</p>
                 </div>
-                <span className={`text-xs px-3 py-1 rounded-full border ${a.status === "confirmed" ? "bg-ink text-paper border-ink" : "border-g3 text-g4"}`}>{LABEL[a.status]}</span>
+                <span className={`mono text-xs px-2 py-1 rounded-md border ${a.status === "confirmed" ? "bg-ink text-paper border-ink" : "border-g3 text-g4"}`}>{LABEL[a.status]}</span>
               </div>
               <p className="mt-3 text-g4 text-sm">{a.services}</p>
               <p className="font-medium">{euro(a.total_cents)}</p>
               {a.status === "confirmed" && (
                 <div className="mt-4 flex flex-wrap gap-x-4 items-center">
                   {canCancel && <button className="btn btn-secondary !min-h-11 !px-4 text-sm" onClick={() => { setErr(""); setTarget(a); }}>Cancelar</button>}
-                  <a className="link text-sm" href={`/api/ics/${a.id}`}>.ics</a>
-                  <a className="link text-sm" target="_blank" rel="noopener" href={googleCalendarUrl(a)}>Google Calendar</a>
+                  {a.inCal
+                    ? <span className="text-sm text-g4 inline-flex gap-1 items-center min-h-11"><Check />En Google Calendar</span>
+                    : <a className="link text-sm" href={googleCalendarAddUrl(a.id)}>Añadir a Google Calendar</a>}
                   <a className="link text-sm" target="_blank" rel="noopener" href={whatsappUrl(`Hola, tengo cita el ${label}.`)}><WhatsApp />&nbsp;WhatsApp</a>
                 </div>
               )}

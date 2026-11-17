@@ -14,7 +14,7 @@ Hacer admin a un usuario:
 `docker exec supabase_db_peluqueria psql -U postgres -c "update profiles set role='admin' where id=(select id from auth.users where email='TU@EMAIL')"`
 
 ## Estado
-Hecho: bienvenida, auth email, reserva 3 pasos, mis citas + cancelar, WhatsApp, perfil (+RGPD), admin, emails (Resend; sin clave se loguean), cron `/api/cron/reminders` (Bearer `CRON_SECRET`), .ics + enlace Google Calendar, PWA, legales (borrador).
+Hecho: bienvenida, auth email, reserva 3 pasos, mis citas + cancelar, WhatsApp, perfil (+RGPD), admin, emails (Resend; sin clave se loguean), cron `/api/cron/reminders` (Bearer `CRON_SECRET`), botón Google Calendar (evento directo por API), PWA, legales (borrador).
 Google OAuth + Calendar implementado (falta probar con credenciales reales). Pendiente: deploy Cloudflare/OpenNext, dominio Resend, GitHub Action de backup, datos reales del negocio.
 
 ## Google (login + Calendar)

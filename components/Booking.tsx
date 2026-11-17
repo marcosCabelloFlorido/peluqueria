@@ -7,7 +7,7 @@ import { addMonths, addDays, format, getDay, getDaysInMonth, parse } from "date-
 import { es } from "date-fns/locale";
 import { book, fetchMonth, fetchSlots } from "@/app/actions";
 import { euro, todayMadrid } from "@/lib/time";
-import { googleCalendarUrl, whatsappUrl } from "@/lib/calendar";
+import { googleCalendarAddUrl, whatsappUrl } from "@/lib/calendar";
 import { Alert, Arrow, Back, Check, Next, WhatsApp } from "./Icons";
 
 type Service = { id: string; slug: string; name: string; price_cents: number; duration_min: number; exclusive_group: string | null };
@@ -135,14 +135,12 @@ export default function Booking({ services, windowDays, loggedIn, calendarConnec
               </div>
               <label className="block mt-5 text-sm text-g4" htmlFor="note">Nota para el peluquero (opcional)</label>
               <textarea id="note" className="field mt-1 py-3 min-h-24" maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} />
-              {loggedIn && (calendarConnected ? (
+              {loggedIn && calendarConnected && (
                 <label className="flex items-center gap-3 min-h-11 mt-3">
-                  <input type="checkbox" className="size-5 accent-black" checked={addCal} onChange={(e) => setAddCal(e.target.checked)} />
+                  <input type="checkbox" className="size-5 accent-white" checked={addCal} onChange={(e) => setAddCal(e.target.checked)} />
                   Añadir a mi Google Calendar
                 </label>
-              ) : (
-                <a href="/api/google/connect?next=/reservar" className="link mt-2">Conectar Google Calendar para añadirla automáticamente</a>
-              ))}
+              )}
               {error && <p role="alert" className="mt-3 text-sm border border-ink rounded-xl px-3 py-2 flex gap-2 items-start"><Alert />{error}</p>}
               <Bar>
                 <button className="btn btn-primary" disabled={pending} onClick={confirm}>{loggedIn ? (pending ? "Reservando…" : "Confirmar cita") : "Entrar para confirmar"} <Arrow /></button>
@@ -274,11 +272,9 @@ function Success({ d }: { d: { id: string; starts_at: string; ends_at: string; s
       <p className="text-g4 mt-2 first-letter:uppercase">{label} · {d.time}</p>
       <p className="text-g4 text-sm">{d.services}</p>
       {d.calendar === "added" && <p className="mt-3 text-sm inline-flex gap-1 items-center"><Check />Añadida a tu Google Calendar</p>}
-      {d.calendar === "failed" && <p className="mt-3 text-sm text-g4">No pudimos añadirla a tu Google Calendar. Usa el enlace de abajo.</p>}
       <div className="mt-8 flex flex-col gap-2 items-center">
         <Link href="/citas" className="btn btn-primary">Ver mis citas <Arrow /></Link>
-        <a className="btn btn-secondary w-full" href={`/api/ics/${d.id}`}>Añadir al calendario (.ics)</a>
-        <a className="link" target="_blank" rel="noopener" href={googleCalendarUrl({ starts_at: d.starts_at, ends_at: d.ends_at, services: d.services })}>Añadir a Google Calendar</a>
+        {d.calendar !== "added" && <a className="btn btn-secondary w-full" href={googleCalendarAddUrl(d.id)}>Añadir a Google Calendar</a>}
         <a className="link" target="_blank" rel="noopener" href={whatsappUrl(`Hola, tengo cita el ${label} a las ${d.time}.`)}><WhatsApp />&nbsp;Escribir por WhatsApp</a>
       </div>
     </div>

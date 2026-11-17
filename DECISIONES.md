@@ -1,6 +1,6 @@
 # Decisiones
 - BD local: Supabase CLI en Docker (mismo stack que producción).
-- Google Calendar: OAuth incremental propio (`lib/google.ts`); sin conectar, enlace + .ics. Si Google falla la cita se guarda igual.
+- Google Calendar: OAuth incremental propio (`lib/google.ts`); el botón "Añadir a Google Calendar" conecta una vez y crea el evento por API, sin pulsar Guardar. Si Google falla la cita se guarda igual.
 - Login con Google: Supabase Auth; `enabled=false` en config.toml hasta tener credenciales.
 - Errores de formulario: negro con icono ⚠, sin rojo.
 - Emails: HTML en línea (sin React Email) para minimizar dependencias.

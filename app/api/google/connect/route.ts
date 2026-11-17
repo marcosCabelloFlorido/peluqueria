@@ -11,7 +11,8 @@ export async function GET(req: NextRequest) {
   if (!user) return NextResponse.redirect(`${origin}/login?next=/perfil`);
   if (!process.env.GOOGLE_CLIENT_ID) return NextResponse.redirect(`${origin}/perfil?gcal=unconfigured`);
 
-  const next = searchParams.get("next") === "/reservar" ? "/reservar" : "/perfil";
+  const n = searchParams.get("next") ?? "";
+  const next = n === "/reservar" || /^\/api\/google\/add\/[0-9a-f-]{36}$/.test(n) ? n : "/perfil";
   const state = crypto.randomUUID();
   const res = NextResponse.redirect(authUrl(state));
   res.cookies.set("g_state", `${state}|${next}`, { httpOnly: true, sameSite: "lax", secure: origin.startsWith("https"), maxAge: 600, path: "/api/google" });
