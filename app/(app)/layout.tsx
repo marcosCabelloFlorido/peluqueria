@@ -28,7 +28,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <ul>
           {tabs.map((t) => (
             <li key={t.href}>
-              <NavLink href={user || t.href === "/reservar" ? t.href : `/login?next=${t.href}`} to={t.href} label={t.label} d={t.d} />
+              <NavLink href={user || t.href === "/reservar" ? t.href : `/login?next=${t.href}`} to={t.href} label={t.label} d={t.d} guard={!user && t.href !== "/reservar"} />
             </li>
           ))}
         </ul>
