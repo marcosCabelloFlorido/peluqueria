@@ -71,7 +71,7 @@ export async function cancel(id: string) {
       await send(process.env.ADMIN_EMAIL, "Cita cancelada", cancellationEmail(l.appt));
     }
   } catch (e) { console.error("[cancel] email", e); }
-  revalidatePath("/citas"); revalidatePath("/admin");
+  revalidatePath("/citas"); revalidatePath("/admin", "layout");
   return { ok: true };
 }
 
@@ -109,7 +109,7 @@ async function requireAdmin() {
   return sb;
 }
 
-export async function adminSetStatus(id: string, status: "completed" | "no_show" | "cancelled") {
+export async function adminSetStatus(id: string, status: "completed" | "no_show" | "cancelled" | "confirmed") {
   const sb = await requireAdmin();
   const { error } = await sb.from("appointments").update({ status }).eq("id", id);
   if (error) return { error: error.message };
@@ -117,7 +117,7 @@ export async function adminSetStatus(id: string, status: "completed" | "no_show"
     const l = await loadAppt(id);
     if (l) await send(l.email, "Cita cancelada · DouceCreative", cancellationEmail(l.appt));
   }
-  revalidatePath("/admin");
+  revalidatePath("/admin", "layout");
   return { ok: true };
 }
 
@@ -127,12 +127,12 @@ export async function adminBlock(f: FormData) {
   const from = String(f.get("from") || "00:00"), to = String(f.get("to") || "23:59");
   const s = localToDate(d, from).toISOString(), e = localToDate(d, to).toISOString();
   await sb.from("blocked_slots").insert({ during: `[${s},${e})`, reason: String(f.get("reason") || "") || null });
-  revalidatePath("/admin");
+  revalidatePath("/admin", "layout");
 }
 export async function adminUnblock(id: string) {
   const sb = await requireAdmin();
   await sb.from("blocked_slots").delete().eq("id", id);
-  revalidatePath("/admin");
+  revalidatePath("/admin", "layout");
 }
 export async function adminUpdateService(f: FormData) {
   const sb = await requireAdmin();
@@ -141,15 +141,15 @@ export async function adminUpdateService(f: FormData) {
     duration_min: Number(f.get("duration")),
     active: f.get("active") === "on",
   }).eq("id", String(f.get("id")));
-  revalidatePath("/admin");
+  revalidatePath("/admin", "layout");
 }
 export async function adminAddHours(f: FormData) {
   const sb = await requireAdmin();
   await sb.from("business_hours").insert({ weekday: Number(f.get("weekday")), opens: String(f.get("opens")), closes: String(f.get("closes")) });
-  revalidatePath("/admin");
+  revalidatePath("/admin", "layout");
 }
 export async function adminDeleteHours(id: number) {
   const sb = await requireAdmin();
   await sb.from("business_hours").delete().eq("id", id);
-  revalidatePath("/admin");
+  revalidatePath("/admin", "layout");
 }

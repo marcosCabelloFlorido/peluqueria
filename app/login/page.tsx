@@ -36,7 +36,18 @@ function Form() {
             options: { data: { full_name: String(f.get("full_name")), phone: String(f.get("phone") || "") } },
           });
     if (res.error) {
-      setErr(mode === "in" ? "Email o contraseña incorrectos." : "No se pudo crear la cuenta. Revisa los datos.");
+      const code = res.error.code ?? "";
+      const reason: Record<string, string> = {
+        user_already_exists: "Ya existe una cuenta con este email. Entra o recupera la contraseña.",
+        email_exists: "Ya existe una cuenta con este email. Entra o recupera la contraseña.",
+        over_email_send_rate_limit: "Demasiados intentos. Espera unos minutos y vuelve a probar.",
+        over_request_rate_limit: "Demasiados intentos. Espera unos minutos y vuelve a probar.",
+        weak_password: "La contraseña es demasiado débil. Usa una más larga o más difícil.",
+        email_address_invalid: "El email no es válido.",
+        signup_disabled: "Los registros están desactivados ahora mismo.",
+        email_not_confirmed: "Confirma tu email antes de entrar. Revisa tu bandeja de entrada.",
+      };
+      setErr(reason[code] ?? (mode === "in" ? "Email o contraseña incorrectos." : "No se pudo crear la cuenta. Inténtalo de nuevo en unos minutos."));
       return setBusy(false);
     }
     if (!res.data.session) {

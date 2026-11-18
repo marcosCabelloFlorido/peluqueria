@@ -17,7 +17,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <header className="flex items-center justify-between px-5 pt-[calc(1rem+env(safe-area-inset-top))] pb-2">
         <span className="display text-xl font-semibold">DouceCreative</span>
         <a href={whatsappUrl("Hola, te escribo desde la app de DouceCreative.")} target="_blank" rel="noopener" aria-label="Escribir por WhatsApp"
-           className="grid place-items-center size-11 rounded-full bg-white/[.06] hover:bg-white/10 transition-colors"><WhatsApp /></a>
+           className="grid place-items-center size-11 rounded-full bg-tint hover:bg-tint2 transition-colors"><WhatsApp /></a>
       </header>
       <main className="px-5">{children}</main>
       <nav aria-label="Principal" className="dock">

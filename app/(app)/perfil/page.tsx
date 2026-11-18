@@ -31,7 +31,7 @@ export default async function Perfil() {
         <label className="text-sm text-g4" htmlFor="t">Teléfono</label>
         <input id="t" className="field" name="phone" type="tel" defaultValue={p?.phone ?? ""} />
         <label className="flex items-center gap-3 min-h-11 mt-2">
-          <input type="checkbox" name="email_reminders" defaultChecked={p?.email_reminders ?? true} className="size-5 accent-white" />
+          <input type="checkbox" name="email_reminders" defaultChecked={p?.email_reminders ?? true} className="size-5 accent-black" />
           Recordatorio de cita por email
         </label>
         <button className="btn btn-primary mt-2">Guardar cambios</button>
