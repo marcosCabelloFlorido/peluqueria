@@ -189,13 +189,29 @@ export default function Booking({ services, windowDays, profile, last, move }: {
           {step === 3 && day && time && (
             <>
               <h1 className="display text-4xl mb-6">Confirma tu cita</h1>
-              <div className="card p-5 flex flex-col gap-4">
-                <ul className="flex flex-col gap-1">
-                  {chosen.map((s) => <li key={s.id} className="flex justify-between"><span>{s.name}</span><span className="text-g4">{euro(s.price_cents)}</span></li>)}
-                </ul>
-                <p className="display text-2xl first-letter:uppercase">{format(parse(day, "yyyy-MM-dd", new Date()), "EEEE d 'de' MMMM", { locale: es })}</p>
-                <p>{time} · {duration} min</p>
-                <p className="flex justify-between font-medium"><span>Total</span><span>{euro(total)}</span></p>
+              <div className="card overflow-hidden">
+                <div className="p-5 flex items-center gap-4">
+                  <div className="size-16 shrink-0 rounded-2xl bg-ink text-paper grid place-items-center leading-none text-center">
+                    <span>
+                      <span className="display block text-3xl">{Number(day.slice(8))}</span>
+                      <span className="block text-[11px] uppercase tracking-wider mt-1 opacity-70">{format(parse(day, "yyyy-MM-dd", new Date()), "MMM", { locale: es })}</span>
+                    </span>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="display text-2xl first-letter:uppercase">{format(parse(day, "yyyy-MM-dd", new Date()), "EEEE", { locale: es })}</p>
+                    <p className="text-g4 mt-0.5">{time} · {duration} min</p>
+                  </div>
+                </div>
+                <div className="border-t border-g2 px-5 py-4">
+                  <p className="text-xs text-g4 uppercase tracking-wider mb-2">Servicios</p>
+                  <ul className="flex flex-col gap-1.5">
+                    {chosen.map((s) => <li key={s.id} className="flex justify-between gap-3"><span>{s.name}</span><span className="text-g4 tabular-nums">{euro(s.price_cents)}</span></li>)}
+                  </ul>
+                </div>
+                <div className="border-t border-g2 bg-tint px-5 py-4 flex justify-between items-baseline">
+                  <span className="text-g4">Total</span>
+                  <span className="display text-2xl tabular-nums">{euro(total)}</span>
+                </div>
               </div>
               <h2 className="display text-2xl mt-8 mb-1">Tus datos</h2>
               <p className="text-sm text-g4 mb-1">Te enviaremos la confirmación y el recordatorio a este email.</p>
