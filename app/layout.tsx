@@ -12,11 +12,18 @@ export const metadata: Metadata = {
   manifest: "/manifest.webmanifest",
   appleWebApp: { capable: true, title: "DouceCreative", statusBarStyle: "default" },
 };
-export const viewport: Viewport = { themeColor: "#ffffff", viewportFit: "cover", width: "device-width", initialScale: 1 };
+export const viewport: Viewport = { themeColor: "#0b0b0c", viewportFit: "cover", width: "device-width", initialScale: 1 };
+
+// tema antes del primer pintado (sin destello blanco); oscuro por defecto
+const themeScript =
+  'try{var t=localStorage.getItem("theme");document.documentElement.dataset.theme=t==="light"?"light":"dark"}catch(e){document.documentElement.dataset.theme="dark"}';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" className={`${display.variable} ${inter.variable} ${geistMono.variable}`}>
+    <html lang="es" suppressHydrationWarning className={`${display.variable} ${inter.variable} ${geistMono.variable}`}>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body>
         {children}
         <script dangerouslySetInnerHTML={{ __html: "if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js')" }} />

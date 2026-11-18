@@ -7,6 +7,7 @@ import { localToDate, todayMadrid, fmt, euro, TZ } from "@/lib/time";
 import { adminSetStatus } from "@/app/actions";
 import { Back, Next } from "@/components/Icons";
 import AdminDate from "@/components/AdminDate";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const STATUS: Record<string, string> = { confirmed: "Confirmada", completed: "Completada", no_show: "No vino", cancelled: "Cancelada" };
 const isDay = (s?: string) => !!s && /^\d{4}-\d{2}-\d{2}$/.test(s);
@@ -163,7 +164,10 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
       <header className="flex items-center justify-between mb-6 sm:mb-8">
         <Link href="/perfil" className="link"><Back />Perfil</Link>
         <span className="display text-xl">DouceCreative</span>
-        <Link href="/admin/ajustes" className="chip !min-h-10 !px-4">Ajustes</Link>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <Link href="/admin/ajustes" className="chip !min-h-10 !px-4">Ajustes</Link>
+        </div>
       </header>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">

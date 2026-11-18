@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { Alert, Arrow } from "@/components/Icons";
+import ThemeToggle from "@/components/ThemeToggle";
 
 function Form() {
   const next = useSearchParams().get("next") || "/reservar";
@@ -59,9 +60,12 @@ function Form() {
 
   return (
     <main className="mx-auto max-w-md min-h-dvh px-6 pt-[calc(2rem+env(safe-area-inset-top))] pb-10">
-      <Link href="/" className="display text-xl font-semibold">
-        DouceCreative
-      </Link>
+      <div className="flex items-center justify-between">
+        <Link href="/" className="display text-xl font-semibold">
+          DouceCreative
+        </Link>
+        <ThemeToggle />
+      </div>
       <h1 className="display text-4xl mt-10 mb-2">
         {mode === "up" ? "Crear cuenta" : mode === "reset" ? "Recuperar acceso" : "Entrar"}
       </h1>

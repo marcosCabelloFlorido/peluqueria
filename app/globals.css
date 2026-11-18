@@ -27,6 +27,19 @@
 }
 
 :root { color-scheme: light; accent-color: var(--ink); caret-color: var(--ink); scrollbar-color: var(--gray-2) transparent; }
+
+/* tema oscuro: los mismos tokens invertidos (la app usa ink/paper, no colores fijos) */
+:root[data-theme="dark"] {
+  --ink: #f2f2f0;
+  --paper: #0b0b0c;
+  --gray-1: #17171a;
+  --gray-2: #2a2a2e;
+  --gray-3: #8b8b91;
+  --gray-4: #b0b0b6;
+  --tint: rgb(255 255 255 / .06);
+  --tint-2: rgb(255 255 255 / .11);
+  color-scheme: dark;
+}
 ::selection { background: var(--ink); color: var(--paper); }
 html { background: var(--paper); color: var(--ink); -webkit-tap-highlight-color: transparent; }
 body { font-variant-numeric: tabular-nums; font-family: var(--font-sans); min-height: 100dvh; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
@@ -40,7 +53,7 @@ body { font-variant-numeric: tabular-nums; font-family: var(--font-sans); min-he
 .btn:active { transform: scale(.97); }
 .btn:disabled { opacity: .25; cursor: not-allowed; }
 .btn-primary { background: var(--ink); color: var(--paper); width: 100%; }
-.btn-primary:hover:not(:disabled) { background: #26262a; }
+.btn-primary:hover:not(:disabled) { background: color-mix(in srgb, var(--ink) 88%, var(--paper)); }
 .btn-primary .arrow { transition: transform .25s var(--ease); }
 .btn-primary:hover .arrow, .btn-primary:focus-visible .arrow { transform: translateX(4px); }
 .btn-secondary { border: 1px solid var(--gray-2); background: var(--paper); }
@@ -53,7 +66,7 @@ body { font-variant-numeric: tabular-nums; font-family: var(--font-sans); min-he
 .field:focus { outline: none; border-color: var(--ink); box-shadow: 0 0 0 4px var(--tint-2); }
 :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 .sticky-bar { position: fixed; left: 0; right: 0; bottom: calc(84px + env(safe-area-inset-bottom)); padding: 1.5rem 1rem .5rem;
-  background: linear-gradient(to top, #fff 60%, transparent); z-index: 20; }
+  background: linear-gradient(to top, var(--paper) 60%, transparent); z-index: 20; }
 .skeleton { background: linear-gradient(90deg, var(--gray-1), var(--gray-2), var(--gray-1)); background-size: 200% 100%; animation: sk 1.2s linear infinite; border-radius: 12px; }
 @keyframes sk { to { background-position: -200% 0; } }
 
@@ -79,6 +92,53 @@ input:user-invalid, textarea:user-invalid { border-color: var(--ink); }
 @keyframes rise { from { opacity: 0; transform: translate3d(0, 14px, 0); } }
 @keyframes rule { from { transform: scaleX(0); } }
 
+/* interruptor de tema, arriba a la derecha */
+.theme-toggle { display: grid; place-items: center; width: 2.75rem; height: 2.75rem; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--gray-2); color: var(--ink); background: transparent;
+  transition: border-color .2s, color .2s, transform .2s var(--ease); }
+.theme-toggle:hover { border-color: var(--ink); }
+.theme-toggle:active { transform: scale(.94); }
+.welcome .theme-toggle { color: rgb(255 255 255 / .78); background: rgb(6 6 7 / .35); backdrop-filter: blur(6px);
+  border-color: rgb(255 255 255 / .22); }
+.welcome .theme-toggle:hover { color: #fff; border-color: #fff; }
+
+/* dentro del espejo: misma bienvenida, en negativo */
+.mirror-frame { position: relative; isolation: isolate; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  width: min(88vw, 26rem); min-height: min(80dvh, 40rem); overflow: hidden; border-radius: 999px;
+  padding: clamp(2.75rem, 9vh, 4.25rem) clamp(1.5rem, 6.5vw, 2.5rem);
+  /* marco de metal cepillado: borde claro fino + canto negro */
+  border: 6px solid #0a0a0b;
+  background: #0a0a0b;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / .3), 0 0 0 2px rgb(0 0 0 / .8),
+    0 40px 90px rgb(0 0 0 / .85), inset 0 0 0 1px rgb(255 255 255 / .22), inset 0 0 70px rgb(0 0 0 / .8); }
+/* luna: la sala reflejada, invertida y desenfocada */
+.mirror-frame::before { content: ""; position: absolute; inset: 0; z-index: -2; transform: scaleX(-1);
+  background: url("/barberia-recorte2.webp") center / cover no-repeat; filter: blur(2.5px) brightness(.8) contrast(1.05) saturate(.7); }
+.mirror-frame::after { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(70% 38% at 30% 8%, rgb(255 255 255 / .2), transparent 70%),
+    linear-gradient(118deg, transparent 30%, rgb(255 255 255 / .12) 31.5%, rgb(255 255 255 / .03) 40%, transparent 41%,
+      transparent 56%, rgb(255 255 255 / .07) 57%, transparent 64%),
+    linear-gradient(to bottom, rgb(4 4 5 / .3), rgb(4 4 5 / .5) 50%, rgb(4 4 5 / .82)); }
+/* tira LED incrustada en el cristal: tubo blanco con halo hacia dentro y fuera */
+.mirror-frame-glow { position: absolute; inset: 9px; z-index: 1; pointer-events: none; border-radius: 999px;
+  border: 5px solid #fff;
+  box-shadow: 0 0 3px 1px #fff, 0 0 14px 3px rgb(255 255 255 / .75), 0 0 46px 8px rgb(255 255 255 / .35),
+    inset 0 0 3px 1px rgb(255 255 255 / .9), inset 0 0 22px 5px rgb(255 255 255 / .5), inset 0 0 80px 12px rgb(255 255 255 / .16);
+  animation: led 5s ease-in-out infinite alternate; }
+/* botones con luz LED: pastilla encendida y tubo fino con punto de luz que recorre el borde */
+.led-solid { position: relative; box-shadow: 0 0 0 1px rgb(255 255 255 / .9), 0 0 12px 1px rgb(255 255 255 / .55), 0 0 34px 4px rgb(255 255 255 / .22),
+  inset 0 -3px 8px rgb(0 0 0 / .12), inset 0 2px 3px #fff; transition: box-shadow .3s var(--ease), transform .2s var(--ease); }
+.led-solid:hover, .led-solid:focus-visible { box-shadow: 0 0 0 1px #fff, 0 0 18px 3px rgb(255 255 255 / .75), 0 0 52px 8px rgb(255 255 255 / .32),
+  inset 0 -3px 8px rgb(0 0 0 / .12), inset 0 2px 3px #fff; }
+.led-line { position: relative; border: 1px solid rgb(255 255 255 / .55); background: rgb(255 255 255 / .03);
+  box-shadow: 0 0 8px rgb(255 255 255 / .28), inset 0 0 12px rgb(255 255 255 / .1); transition: box-shadow .3s var(--ease), border-color .3s; }
+.led-line:hover, .led-line:focus-visible { border-color: #fff; box-shadow: 0 0 16px 1px rgb(255 255 255 / .5), inset 0 0 18px rgb(255 255 255 / .18); }
+.led-line::after { content: ""; position: absolute; bottom: -2px; left: 50%; width: 22px; height: 3px; margin-left: -11px; border-radius: 3px; background: #fff;
+  box-shadow: 0 0 8px 2px #fff, 0 0 20px 4px rgb(255 255 255 / .5); animation: led-dot 4s ease-in-out infinite alternate; }
+@keyframes led-dot { from { transform: translateX(-26%); opacity: .55; } to { transform: translateX(26%); opacity: 1; } }
+@keyframes led { from { opacity: .88; } to { opacity: 1; } }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }
@@ -86,7 +146,7 @@ input:user-invalid, textarea:user-invalid { border-color: var(--ink); }
 /* navbar flotante: la única superficie negra de la app cliente */
 .dock { position: fixed; z-index: 30; left: 0; right: 0; bottom: calc(12px + env(safe-area-inset-bottom)); padding: 0 1rem; pointer-events: none; }
 .dock > ul { pointer-events: auto; margin: 0 auto; max-width: 22rem; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 6px;
-  border-radius: 999px; background: var(--ink); box-shadow: 0 10px 30px rgb(11 11 12 / .18); }
+  border-radius: 999px; background: #0b0b0c; box-shadow: 0 0 0 1px rgb(255 255 255 / .14), 0 10px 30px rgb(0 0 0 / .35); }
 
 /* control segmentado */
 .seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 2px; padding: 3px; border-radius: 999px; background: var(--tint); }

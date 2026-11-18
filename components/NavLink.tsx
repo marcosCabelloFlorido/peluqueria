@@ -10,7 +10,7 @@ export default function NavLink({ href, to, label, d }: { href: string; to: stri
     <Link
       href={href}
       aria-current={active ? "page" : undefined}
-      className={`relative flex flex-col items-center justify-center gap-0.5 h-14 rounded-full text-[11px] transition-colors ${active ? "text-ink font-medium" : "text-white/55 hover:text-white"}`}
+      className={`relative flex flex-col items-center justify-center gap-0.5 h-14 rounded-full text-[11px] transition-colors ${active ? "text-[#0b0b0c] font-medium" : "text-white/55 hover:text-white"}`}
     >
       {active && <motion.span layoutId="navPill" className="absolute inset-0 rounded-full bg-white" transition={{ type: "spring", stiffness: 380, damping: 32 }} />}
       <span className="relative"><Tab d={d} /></span>

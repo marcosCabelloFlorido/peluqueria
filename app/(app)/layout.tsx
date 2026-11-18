@@ -2,6 +2,7 @@ import NavLink from "@/components/NavLink";
 import { supabaseServer } from "@/lib/supabase/server";
 import { whatsappUrl } from "@/lib/calendar";
 import { WhatsApp } from "@/components/Icons";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const tabs = [
   { href: "/reservar", label: "Reservar", d: "M8 2v4M16 2v4M3 9h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" },
@@ -16,8 +17,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <div className="mx-auto max-w-md min-h-dvh pb-[calc(160px+env(safe-area-inset-bottom))]">
       <header className="flex items-center justify-between px-5 pt-[calc(1rem+env(safe-area-inset-top))] pb-2">
         <span className="display text-xl font-semibold">DouceCreative</span>
-        <a href={whatsappUrl("Hola, te escribo desde la app de DouceCreative.")} target="_blank" rel="noopener" aria-label="Escribir por WhatsApp"
-           className="grid place-items-center size-11 rounded-full bg-tint hover:bg-tint2 transition-colors"><WhatsApp /></a>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <a href={whatsappUrl("Hola, te escribo desde la app de DouceCreative.")} target="_blank" rel="noopener" aria-label="Escribir por WhatsApp"
+             className="grid place-items-center size-11 rounded-full bg-tint hover:bg-tint2 transition-colors"><WhatsApp /></a>
+        </div>
       </header>
       <main className="px-5">{children}</main>
       <nav aria-label="Principal" className="dock">
