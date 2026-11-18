@@ -25,7 +25,8 @@ const ERRORS: Record<string, string> = {
   too_late: "Ya no se puede cancelar online. Escribe por WhatsApp.",
   not_cancellable: "Esta cita no se puede cancelar.",
 };
-const msg = (e: { message: string }) => ERRORS[e.message] ?? "Algo ha fallado. Inténtalo de nuevo.";
+const msg = (e: { message: string }) =>
+  ERRORS[e.message] ?? `Algo ha fallado. Inténtalo de nuevo.${process.env.NODE_ENV === "production" ? "" : ` [${e.message}]`}`;
 
 async function loadAppt(id: string) {
   const svc = supabaseService();
@@ -57,11 +58,16 @@ export async function book(input: { serviceIds: string[]; day: string; time: str
   const sb = await supabaseServer();
   const { data: { user } } = await sb.auth.getUser();
   const startsAt = localToDate(day.parse(input.day), z.string().regex(/^\d{2}:\d{2}$/).parse(input.time));
-  const { data, error } = await supabaseService().rpc("book_appointment", {
-    p_user_id: user?.id ?? null, p_name: c.data.name, p_phone: c.data.phone, p_email: c.data.email,
+  const svc = supabaseService();
+  const args = {
+    p_name: c.data.name, p_phone: c.data.phone, p_email: c.data.email,
     p_service_ids: input.serviceIds, p_starts_at: startsAt.toISOString(), p_note: input.note?.slice(0, 500) ?? null,
-  });
-  if (error) return { error: msg(error), refresh: error.message === "slot_taken" };
+  };
+  let r = await svc.rpc("book_appointment", { ...args, p_user_id: user?.id ?? null });
+  // Sesión de una cuenta ya sin perfil (FK): reservar como invitado en vez de fallar.
+  if (r.error?.code === "23503" && user) r = await svc.rpc("book_appointment", { ...args, p_user_id: null });
+  const { data, error } = r;
+  if (error) { if (!ERRORS[error.message]) console.error("[book] rpc", error); return { error: msg(error), refresh: error.message === "slot_taken" }; }
   let ends = startsAt.toISOString();
   try {
     const l = await loadAppt(data as string);

@@ -9,7 +9,7 @@ test("invitado reserva sin cuenta y luego entra para ver su cita", async ({ page
   await page.getByRole("button", { name: "Elegir fecha" }).click();
 
   // 2. Día y hora
-  const day = page.locator('[role=grid] button:not([disabled])').first();
+  const day = page.locator('[role=grid] button:not([disabled])').last(); // último día: fuera del límite de cancelación
   await expect(day).toBeVisible();
   await day.click();
   const slot = page.getByRole("group", { name: "Horas disponibles" }).getByRole("button").first();
@@ -39,6 +39,7 @@ test("invitado reserva sin cuenta y luego entra para ver su cita", async ({ page
 
   // 5. Cancelar
   await expect(page.getByText("Confirmada")).toBeVisible();
+  await page.waitForLoadState("networkidle"); // hidratación antes de pulsar
   await page.getByRole("button", { name: "Cancelar" }).click();
   await page.getByRole("button", { name: "Sí, cancelar cita" }).click();
   await page.getByRole("tab", { name: "Historial" }).click();
