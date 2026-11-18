@@ -166,26 +166,28 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
           <p className="text-g4 mt-1 first-letter:uppercase">{sub}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Link href={q(shift(day, -step))} aria-label="Anterior" className="chip !size-10 !p-0 justify-center"><Back /></Link>
           <Link href={q(today)} className="chip !min-h-10 !px-4">Hoy</Link>
           <Link href={q(shift(today, 1))} className="chip !min-h-10 !px-4">Mañana</Link>
-          <Link href={q(shift(day, step))} aria-label="Siguiente" className="chip !size-10 !p-0 justify-center"><Next /></Link>
           <AdminDate value={day} view={view} />
         </div>
       </div>
 
-      <nav aria-label="Días" className="dstrip mt-6">
-        {strip.map((d) => {
-          const n = countBy.get(d) ?? 0;
-          return (
-            <Link key={d} href={q(d, "day")} className="dchip" aria-current={d === day && view === "day" ? "date" : undefined}>
-              <small>{fmt(localToDate(d, "12:00"), "EEE").replace(".", "")}</small>
-              <b>{Number(d.slice(8))}</b>
-              <i>{n ? `${n} ${n === 1 ? "cita" : "citas"}` : ""}</i>
-            </Link>
-          );
-        })}
-      </nav>
+      <div className="mt-6 flex items-center gap-2">
+        <Link href={q(shift(day, -step))} aria-label="Anterior" className="chip !size-10 !p-0 justify-center shrink-0"><Back /></Link>
+        <nav aria-label="Días" className="dstrip">
+          {strip.map((d) => {
+            const n = countBy.get(d) ?? 0;
+            return (
+              <Link key={d} href={q(d, "day")} className="dchip" aria-current={d === day && view === "day" ? "date" : undefined}>
+                <small>{fmt(localToDate(d, "12:00"), "EEE").replace(".", "")}</small>
+                <b>{Number(d.slice(8))}</b>
+                <i>{n ? `${n} ${n === 1 ? "cita" : "citas"}` : ""}</i>
+              </Link>
+            );
+          })}
+        </nav>
+        <Link href={q(shift(day, step))} aria-label="Siguiente" className="chip !size-10 !p-0 justify-center shrink-0"><Next /></Link>
+      </div>
 
       <div className="seg mt-6 max-w-xs" role="tablist">
         <Link role="tab" aria-selected={view === "day"} href={q(day, "day")}>Día</Link>

@@ -100,7 +100,7 @@ details > summary::-webkit-details-marker { display: none; }
 
 /* dashboard del peluquero */
 .dash { max-width: 72rem; margin-inline: auto; }
-.dstrip { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; scroll-snap-type: x proximity; }
+.dstrip { display: flex; flex: 1; min-width: 0; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; scroll-snap-type: x proximity; }
 .dstrip::-webkit-scrollbar { display: none; }
 .dchip { flex: none; scroll-snap-align: center; width: 56px; display: grid; justify-items: center; gap: 2px; padding: 10px 0; border-radius: 16px; border: 1px solid var(--gray-2); transition: border-color .2s, background-color .2s; }
 .dchip:hover { border-color: var(--ink); }
