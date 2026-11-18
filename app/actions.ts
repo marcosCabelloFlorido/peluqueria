@@ -21,7 +21,7 @@ const ERRORS: Record<string, string> = {
   outside_hours: "Esa hora está fuera del horario.",
   invalid_services: "Servicios no válidos.",
   exclusive_services: "No puedes combinar esos dos cortes.",
-  not_authenticated: "Inicia sesión para confirmar.",
+  invalid_contact: "Revisa tu nombre, teléfono y email.",
   too_late: "Ya no se puede cancelar online. Escribe por WhatsApp.",
   not_cancellable: "Esta cita no se puede cancelar.",
 };
@@ -31,19 +31,34 @@ async function loadAppt(id: string) {
   const svc = supabaseService();
   const { data } = await svc
     .from("appointments")
-    .select("id,starts_at,ends_at,total_cents,user_id,appointment_services(services(name))")
+    .select("id,starts_at,ends_at,total_cents,user_id,contact_name,contact_email,appointment_services(services(name))")
     .eq("id", id).single();
   if (!data) return null;
-  const { data: u } = await svc.auth.admin.getUserById(data.user_id);
-  const { data: p } = await svc.from("profiles").select("full_name,email_reminders").eq("id", data.user_id).single();
+  let email = data.contact_email ?? undefined, name = data.contact_name ?? "", notify = true;
+  if (data.user_id) {
+    const { data: p } = await svc.from("profiles").select("full_name,email_reminders").eq("id", data.user_id).single();
+    if (!email) email = (await svc.auth.admin.getUserById(data.user_id)).data.user?.email;
+    name ||= p?.full_name ?? "";
+    notify = p?.email_reminders ?? true;
+  }
   const services = (data.appointment_services as unknown as { services: { name: string } }[]).map((s) => s.services.name).join(" + ");
-  return { appt: { ...data, services }, email: u.user?.email, name: p?.full_name ?? "", notify: p?.email_reminders ?? true };
+  return { appt: { ...data, services }, email, name, notify, hasAccount: !!data.user_id };
 }
 
-export async function book(input: { serviceIds: string[]; day: string; time: string; note?: string }) {
+const contact = z.object({
+  name: z.string().trim().min(2).max(100),
+  phone: z.string().trim().regex(/^[+\d][\d\s().-]{6,19}$/),
+  email: z.string().trim().max(200).email(),
+});
+
+export async function book(input: { serviceIds: string[]; day: string; time: string; note?: string; name: string; phone: string; email: string }) {
+  const c = contact.safeParse({ name: input.name, phone: input.phone, email: input.email });
+  if (!c.success) return { error: ERRORS.invalid_contact };
   const sb = await supabaseServer();
+  const { data: { user } } = await sb.auth.getUser();
   const startsAt = localToDate(day.parse(input.day), z.string().regex(/^\d{2}:\d{2}$/).parse(input.time));
-  const { data, error } = await sb.rpc("book_appointment", {
+  const { data, error } = await supabaseService().rpc("book_appointment", {
+    p_user_id: user?.id ?? null, p_name: c.data.name, p_phone: c.data.phone, p_email: c.data.email,
     p_service_ids: input.serviceIds, p_starts_at: startsAt.toISOString(), p_note: input.note?.slice(0, 500) ?? null,
   });
   if (error) return { error: msg(error), refresh: error.message === "slot_taken" };
@@ -52,12 +67,20 @@ export async function book(input: { serviceIds: string[]; day: string; time: str
     const l = await loadAppt(data as string);
     if (l) {
       ends = l.appt.ends_at;
-      await send(l.email, "Cita confirmada · DouceCreative", confirmationEmail(l.appt));
+      await send(l.email, "Cita confirmada · DouceCreative", confirmationEmail(l.appt, l.hasAccount));
       await send(process.env.ADMIN_EMAIL, "Nueva cita", adminNewEmail(l.appt, l.name));
     }
   } catch (e) { console.error("[book] email", e); }
   revalidatePath("/citas");
-  return { id: data as string, starts_at: startsAt.toISOString(), ends_at: ends };
+  return { id: data as string, starts_at: startsAt.toISOString(), ends_at: ends, loggedIn: !!user };
+}
+
+// Tras reservar como invitado y entrar: la cita pasa a la cuenta. Quien conoce el id es quien la creó.
+export async function claimAppointment(id: string) {
+  const sb = await supabaseServer();
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user || !z.string().uuid().safeParse(id).success) return;
+  await supabaseService().from("appointments").update({ user_id: user.id }).eq("id", id).is("user_id", null);
 }
 
 export async function cancel(id: string) {

@@ -1,7 +1,10 @@
 import { supabaseServer } from "@/lib/supabase/server";
 import Appointments from "@/components/Appointments";
+import { claimAppointment } from "@/app/actions";
 
-export default async function Citas() {
+export default async function Citas({ searchParams }: { searchParams: Promise<{ claim?: string }> }) {
+  const { claim } = await searchParams;
+  if (claim) await claimAppointment(claim);
   const sb = await supabaseServer();
   const [{ data }, { data: settings }] = await Promise.all([
     sb

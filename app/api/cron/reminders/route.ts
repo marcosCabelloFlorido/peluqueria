@@ -22,17 +22,19 @@ export async function GET(req: Request) {
     .is("reminder_sent_at", null)
     .gt("starts_at", now.toISOString())
     .lte("starts_at", limit)
-    .select("id,user_id,starts_at,ends_at,created_at,total_cents,appointment_services(services(name))");
+    .select("id,user_id,contact_email,starts_at,ends_at,created_at,total_cents,appointment_services(services(name))");
 
   let sent = 0;
   for (const a of claimed ?? []) {
     // Reservada con menos antelación que el aviso: la confirmación ya cubre el recordatorio.
     if (+new Date(a.starts_at) - +new Date(a.created_at) < hours * 3600_000) continue;
-    const { data: p } = await svc.from("profiles").select("email_reminders").eq("id", a.user_id).single();
-    if (p && !p.email_reminders) continue;
-    const { data: u } = await svc.auth.admin.getUserById(a.user_id);
+    if (a.user_id) {
+      const { data: p } = await svc.from("profiles").select("email_reminders").eq("id", a.user_id).single();
+      if (p && !p.email_reminders) continue;
+    }
+    const email = a.contact_email ?? (a.user_id ? (await svc.auth.admin.getUserById(a.user_id)).data.user?.email : undefined);
     const services = (a.appointment_services as unknown as { services: { name: string } }[]).map((x) => x.services.name).join(" + ");
-    await send(u.user?.email, "Recordatorio de tu cita · DouceCreative", reminderEmail({ ...a, services }));
+    await send(email, "Recordatorio de tu cita · DouceCreative", reminderEmail({ ...a, services }));
     sent++;
   }
   return Response.json({ sent });

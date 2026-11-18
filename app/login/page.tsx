@@ -66,7 +66,7 @@ function Form() {
         {mode === "up" ? "Crear cuenta" : mode === "reset" ? "Recuperar acceso" : "Entrar"}
       </h1>
       <p className="text-g4 mb-6">
-        {mode === "reset" ? "Te enviaremos un enlace por email." : "Inicia sesión o regístrate para pedir tu cita, recibir la confirmación y el recordatorio por email."}
+        {mode === "reset" ? "Te enviaremos un enlace por email." : "Con tu cuenta ves y gestionas tus citas, y reservar es más rápido."}
       </p>
 
       {mode !== "reset" && (

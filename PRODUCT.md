@@ -8,7 +8,7 @@
 
 **Principios**
 1. Un solo botón primario por pantalla; siempre claro cuál es el siguiente paso.
-2. Cero fricción: login solo justo antes de confirmar; la selección no se pierde.
+2. Cero fricción: reservar sin cuenta (nombre, teléfono y email); el login es opcional, se ofrece tras confirmar.
 3. La BD es la fuente de verdad (sin dobles reservas).
 4. Sin integraciones externas: confirmación y recordatorio por email.
 
