@@ -22,7 +22,7 @@ Estado: `npm run deploy` está preparado (`wrangler.jsonc`, `worker.ts`, `open-n
 3. Secretos (uno a uno, `npx wrangler secret put <NOMBRE>`):
    `SUPABASE_SERVICE_ROLE_KEY`, `TOKEN_ENCRYPTION_KEY` (32 bytes base64: `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`), `CRON_SECRET`, `RESEND_API_KEY`, `EMAIL_FROM`, `ADMIN_EMAIL`.
 4. Variables no secretas para el cron: añade en `wrangler.jsonc` bajo `"vars"`: `{ "SITE_URL": "https://<dominio>" }`; y el secreto `CRON_SECRET` ya vale.
-5. `npm run deploy`. El Cron Trigger (cada 15 min) llama a `/api/cron/reminders` y mantiene activa la BD.
+5. `npm run deploy`. El Cron Trigger (cada 15 min) llama a `/api/cron/reminders` (mantiene activa la BD) y a `/api/cron/daily-summary`, que a las 21:00 (Madrid) envía a `ADMIN_EMAIL` las citas de mañana. Prueba manual: `curl -H "Authorization: Bearer $CRON_SECRET" "$SITE_URL/api/cron/daily-summary?force=1"`.
 6. Comprueba `https://<dominio>/api/health` → `{"ok":true}`.
 
 ## 4. Resend (emails)
