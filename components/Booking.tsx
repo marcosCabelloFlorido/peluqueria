@@ -7,6 +7,7 @@ import { es } from "date-fns/locale";
 import { book, fetchMonth, fetchSlots, reschedule } from "@/app/actions";
 import { euro, todayMadrid } from "@/lib/time";
 import { whatsappUrl } from "@/lib/calendar";
+import type { DayInfo } from "@/lib/availability";
 import { Alert, Arrow, Back, Next, WhatsApp } from "./Icons";
 
 type Service = { id: string; slug: string; name: string; price_cents: number; duration_min: number; exclusive_group: string | null };
@@ -197,13 +198,22 @@ export default function Booking({ services, windowDays, profile, last, move }: {
                 <p className="flex justify-between font-medium"><span>Total</span><span>{euro(total)}</span></p>
               </div>
               <h2 className="display text-2xl mt-8 mb-1">Tus datos</h2>
-              <p className="text-sm text-g4 mb-3">Te enviaremos la confirmación y el recordatorio a este email.</p>
-              <div className="flex flex-col gap-3">
-                <input {...fieldProps("name")} name="name" placeholder="Nombre" autoComplete="name" maxLength={100} value={contact.name} onChange={setC("name")} required />
+              <p className="text-sm text-g4 mb-1">Te enviaremos la confirmación y el recordatorio a este email.</p>
+              {!profile && (
+                <p className="text-sm text-g4 mb-3">
+                  ¿Ya tienes cuenta?{" "}
+                  <Link href="/login?next=/reservar" className="underline underline-offset-4 text-ink">Entra</Link> y rellenamos tus datos.
+                </p>
+              )}
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="c-name" className="text-sm text-g4">Nombre</label>
+                <input {...fieldProps("name")} id="c-name" name="name" placeholder="Tu nombre" autoComplete="name" maxLength={100} value={contact.name} onChange={setC("name")} required />
                 {fieldErr("name") && <FieldError id="err-name">{fieldErr("name")}</FieldError>}
-                <input {...fieldProps("phone")} name="phone" type="tel" inputMode="tel" placeholder="Teléfono" autoComplete="tel" maxLength={20} value={contact.phone} onChange={setC("phone")} required />
+                <label htmlFor="c-phone" className="text-sm text-g4 mt-2">Teléfono</label>
+                <input {...fieldProps("phone")} id="c-phone" name="phone" type="tel" inputMode="tel" placeholder="612 345 678" autoComplete="tel" maxLength={20} value={contact.phone} onChange={setC("phone")} required />
                 {fieldErr("phone") && <FieldError id="err-phone">{fieldErr("phone")}</FieldError>}
-                <input {...fieldProps("email")} name="email" type="email" inputMode="email" placeholder="Email" autoComplete="email" maxLength={200} value={contact.email} onChange={setC("email")} required />
+                <label htmlFor="c-email" className="text-sm text-g4 mt-2">Email</label>
+                <input {...fieldProps("email")} id="c-email" name="email" type="email" inputMode="email" placeholder="nombre@gmail.com" autoComplete="email" maxLength={200} value={contact.email} onChange={setC("email")} required />
                 {fieldErr("email") && <FieldError id="err-email">{fieldErr("email")}</FieldError>}
               </div>
               <label className="block mt-5 text-sm text-g4" htmlFor="note">Nota para el peluquero (opcional)</label>
@@ -221,7 +231,7 @@ export default function Booking({ services, windowDays, profile, last, move }: {
 }
 
 const FieldError = ({ id, children }: { id: string; children: React.ReactNode }) => (
-  <p id={id} className="-mt-1 text-sm flex gap-1.5 items-center"><Alert />{children}</p>
+  <p id={id} className="text-sm flex gap-1.5 items-center"><Alert />{children}</p>
 );
 
 const Bar = ({ children }: { children: React.ReactNode }) => (
@@ -249,7 +259,9 @@ function DayTime(p: { duration: number; windowDays: number; day: string | null; 
   const today = todayMadrid();
   const last = format(addDays(new Date(), p.windowDays), "yyyy-MM-dd");
   const [month, setMonth] = useState(() => (p.day ?? today).slice(0, 7));
-  const [open, setOpen] = useState<string[] | null>(null);
+  const [open, setOpen] = useState<Record<string, DayInfo> | null>(null);
+  const [hint, setHint] = useState("");
+  const auto = useRef(true); // preselecciona el primer día libre solo una vez
   const [slots, setSlots] = useState<string[] | null>(null);
   const [next, setNext] = useState<string | null>(null);
   const slotsRef = useRef<HTMLDivElement>(null);
@@ -278,7 +290,7 @@ function DayTime(p: { duration: number; windowDays: number; day: string | null; 
 
   useEffect(() => {
     setNext(null);
-    if (slots && slots.length === 0 && open) setNext(open.find((d) => p.day && d > p.day) ?? null);
+    if (slots && slots.length === 0 && open) setNext(Object.keys(open).sort().find((d) => open[d].n > 0 && p.day && d > p.day) ?? null);
   }, [slots, open, p.day]);
 
   const first = parse(`${month}-01`, "yyyy-MM-dd", new Date());
@@ -287,36 +299,63 @@ function DayTime(p: { duration: number; windowDays: number; day: string | null; 
   const shift = (n: number) => setMonth(format(addMonths(first, n), "yyyy-MM"));
   const canPrev = month > today.slice(0, 7);
   const canNext = month < last.slice(0, 7);
+  const nav = (n: number) => { auto.current = false; setHint(""); shift(n); };
+
+  // Al entrar sin día elegido: marca el primer día con hueco (si el mes no tiene, salta al siguiente).
+  const { setDay } = p;
+  useEffect(() => {
+    if (!open || p.day || !auto.current) return;
+    const f = Object.keys(open).sort().find((d) => open[d].n > 0);
+    if (f) { auto.current = false; setDay(f); }
+    else if (canNext) setMonth(format(addMonths(parse(`${month}-01`, "yyyy-MM-dd", new Date()), 1), "yyyy-MM"));
+  }, [open, p.day, canNext, month, setDay]);
+
+  function whyClosed(d: string, info: DayInfo) {
+    const date = parse(d, "yyyy-MM-dd", new Date());
+    if (info.why === "cerrado") return `No abrimos el ${format(date, "EEEE", { locale: es })}.`;
+    return d === today ? "Hoy ya no quedan huecos." : `El ${format(date, "d 'de' MMMM", { locale: es })} está completo.`;
+  }
 
   return (
     <>
       <h1 className="display text-4xl mb-6">{p.title ?? "Elige día y hora"}</h1>
       {p.intro}
       <div className="flex items-center justify-between mb-3">
-        <button className="size-11 grid place-items-center disabled:opacity-20" disabled={!canPrev} onClick={() => shift(-1)} aria-label="Mes anterior"><Back /></button>
+        <button className="size-11 grid place-items-center disabled:opacity-20" disabled={!canPrev} onClick={() => nav(-1)} aria-label="Mes anterior"><Back /></button>
         <p className="first-letter:uppercase font-medium" aria-live="polite">{format(first, "LLLL yyyy", { locale: es })}</p>
-        <button className="size-11 grid place-items-center disabled:opacity-20" disabled={!canNext} onClick={() => shift(1)} aria-label="Mes siguiente"><Next /></button>
+        <button className="size-11 grid place-items-center disabled:opacity-20" disabled={!canNext} onClick={() => nav(1)} aria-label="Mes siguiente"><Next /></button>
       </div>
       <motion.div drag={reduce ? false : "x"} dragConstraints={{ left: 0, right: 0 }} dragElastic={0.2} style={{ touchAction: "pan-y" }}
-        onDragEnd={(_, i) => { if (i.offset.x < -60 && canNext) shift(1); else if (i.offset.x > 60 && canPrev) shift(-1); }}>
+        onDragEnd={(_, i) => { if (i.offset.x < -60 && canNext) nav(1); else if (i.offset.x > 60 && canPrev) nav(-1); }}>
         <div className="grid grid-cols-7 text-center text-xs text-g3 mb-1">{["L", "M", "X", "J", "V", "S", "D"].map((d) => <span key={d}>{d}</span>)}</div>
         <div className="grid grid-cols-7 gap-y-1" role="grid">
           {cells.map((d, i) => {
             if (!d) return <span key={`e${i}`} />;
-            const ok = !!open?.includes(d);
+            const info = open?.[d];
+            const ok = !!info && info.n > 0;
+            const few = ok && info.n <= 3;
+            const dim = !!info && !ok; // dentro de la ventana, pero cerrado o completo
             const sel = p.day === d;
+            const label = format(parse(d, "yyyy-MM-dd", new Date()), "d 'de' MMMM", { locale: es });
             return (
-              <button key={d} disabled={!ok} aria-pressed={sel} aria-label={format(parse(d, "yyyy-MM-dd", new Date()), "d 'de' MMMM", { locale: es })}
-                onClick={() => { wantScroll.current = true; p.setDay(d); }}
-                className={`relative h-11 grid place-items-center text-sm rounded-full ${ok ? "" : "text-g3/60"} ${open === null ? "skeleton !rounded-full m-0.5" : ""}`}>
+              <button key={d} disabled={!info} aria-disabled={dim || undefined} aria-pressed={sel}
+                aria-label={dim ? `${label}, ${info.why}` : few ? `${label}, pocos huecos` : label}
+                onClick={() => { if (!ok) { setHint(whyClosed(d, info!)); return; } auto.current = false; setHint(""); wantScroll.current = true; p.setDay(d); }}
+                className={`relative h-11 grid place-items-center text-sm rounded-full ${ok ? "" : "text-g3/60"} ${dim ? "line-through" : ""} ${open === null ? "skeleton !rounded-full m-0.5" : ""}`}>
                 {sel && <motion.span layoutId="dayPill" className="absolute inset-0 m-auto size-10 rounded-full bg-ink" transition={spring} />}
                 <span className={`relative ${sel ? "text-paper" : ""}`}>{Number(d.slice(8))}</span>
                 {d === today && <span className={`absolute bottom-1 size-1 rounded-full ${sel ? "bg-paper" : "bg-ink"}`} />}
+                {few && <span className={`absolute top-1.5 right-2 size-1.5 rounded-full ${sel ? "bg-paper" : "bg-ink"}`} />}
               </button>
             );
           })}
         </div>
       </motion.div>
+      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-g4">
+        <span className="inline-flex items-center gap-1.5"><span className="size-1.5 rounded-full bg-ink" />Pocos huecos</span>
+        <span><s>12</s> Cerrado o completo (tócalo)</span>
+      </div>
+      {hint && <p role="status" className="mt-2 text-sm border border-g2 rounded-xl px-3 py-2">{hint}</p>}
 
       <div ref={slotsRef} className="mt-6 min-h-40 scroll-mt-4">
         {p.day && slots === null && <div className="grid grid-cols-4 gap-2">{Array.from({ length: 8 }, (_, i) => <div key={i} className="skeleton h-11" />)}</div>}

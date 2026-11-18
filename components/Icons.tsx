@@ -25,3 +25,6 @@ export const Moon = () => (
 
 export const Close = () => <Stroke d="M6 6l12 12M18 6L6 18" size={14} />;
 export const Chevron = () => <Stroke d="M6 9l6 6 6-6" />;
+
+export const Eye = () => <Stroke d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12ZM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" size={20} />;
+export const EyeOff = () => <Stroke d="M3 3l18 18M10.6 5.1A10 10 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4M6.5 6.5C3.9 8.3 2 12 2 12s3.6 7 10 7a9.7 9.7 0 0 0 4.4-1M9.9 9.9a3 3 0 0 0 4.2 4.2" size={20} />;

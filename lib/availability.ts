@@ -25,7 +25,9 @@ export async function getAvailableSlots(day: string, durationMin: number, ignore
   return computeSlots({ day, durationMin, hours, busy: free, now: new Date(), stepMin: settings.slot_step_min, minNoticeMin: settings.min_notice_min });
 }
 
-/** Días del mes (yyyy-MM-dd) con al menos un hueco. */
+export type DayInfo = { n: number; why?: "cerrado" | "completo" };
+
+/** Días reservables del mes (yyyy-MM-dd → huecos libres y, si no hay, el motivo). Fuera de ventana no aparecen. */
 export async function getMonthAvailability(month: string, durationMin: number) {
   const first = `${month}-01`;
   const days: string[] = [];
@@ -34,9 +36,13 @@ export async function getMonthAvailability(month: string, durationMin: number) {
   const { hours, settings, busy } = await ctx(days[0], days[days.length - 1]);
   const today = todayMadrid();
   const last = formatInTimeZone(addDays(new Date(), settings.booking_window_days), TZ, "yyyy-MM-dd");
-  return days.filter(
-    (day) =>
-      day >= today && day <= last &&
-      computeSlots({ day, durationMin, hours, busy, now: new Date(), stepMin: settings.slot_step_min, minNoticeMin: settings.min_notice_min }).length > 0,
-  );
+  const open = new Set(hours.map((h: { weekday: number }) => h.weekday));
+  const out: Record<string, DayInfo> = {};
+  for (const day of days) {
+    if (day < today || day > last) continue;
+    const n = computeSlots({ day, durationMin, hours, busy, now: new Date(), stepMin: settings.slot_step_min, minNoticeMin: settings.min_notice_min }).length;
+    const weekday = new Date(`${day}T12:00:00Z`).getUTCDay() || 7; // ISO: lunes=1 … domingo=7
+    out[day] = n > 0 ? { n } : { n: 0, why: open.has(weekday) ? "completo" : "cerrado" };
+  }
+  return out;
 }

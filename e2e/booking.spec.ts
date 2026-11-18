@@ -20,9 +20,9 @@ test("invitado reserva sin cuenta y luego entra para ver su cita", async ({ page
   await expect(page.getByRole("heading", { name: "Confirma tu cita" })).toBeVisible();
   const confirm = page.getByRole("button", { name: "Confirmar cita" });
   await expect(confirm).toBeDisabled();
-  await page.getByPlaceholder("Nombre").fill("Cliente E2E");
-  await page.getByPlaceholder("Teléfono").fill("600123123");
-  await page.getByPlaceholder("Email").fill(email);
+  await page.getByLabel("Nombre").fill("Cliente E2E");
+  await page.getByLabel("Teléfono").fill("600123123");
+  await page.getByLabel("Email").fill(email);
   await confirm.click();
   await expect(page.getByRole("heading", { name: "¡Cita confirmada!" })).toBeVisible();
 
@@ -30,10 +30,11 @@ test("invitado reserva sin cuenta y luego entra para ver su cita", async ({ page
   await expect(page.getByRole("heading", { name: "¿Quieres iniciar sesión?" })).toBeVisible();
   await page.getByRole("link", { name: "Iniciar sesión" }).click();
   await expect(page).toHaveURL(/\/login/);
+  await page.getByRole("button", { name: "Entrar con contraseña" }).click();
   await page.getByRole("tab", { name: "Crear cuenta" }).click();
-  await page.getByPlaceholder("Nombre").fill("Cliente E2E");
-  await page.getByPlaceholder("Email").fill(email);
-  await page.getByPlaceholder("Contraseña").fill("secret123");
+  await page.getByLabel("Nombre").fill("Cliente E2E");
+  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Contraseña", { exact: true }).fill("secret123");
   await page.locator("form").getByRole("button", { name: "Crear cuenta" }).click();
   await expect(page).toHaveURL(/\/citas/);
 
