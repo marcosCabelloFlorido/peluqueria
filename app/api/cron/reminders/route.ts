@@ -1,5 +1,6 @@
 import { supabaseService } from "@/lib/supabase/server";
 import { reminderEmail, send } from "@/lib/email";
+import { apptUrl } from "@/lib/apptAccess";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +35,7 @@ export async function GET(req: Request) {
     }
     const email = a.contact_email ?? (a.user_id ? (await svc.auth.admin.getUserById(a.user_id)).data.user?.email : undefined);
     const services = (a.appointment_services as unknown as { services: { name: string } }[]).map((x) => x.services.name).join(" + ");
-    await send(email, "Recordatorio de tu cita · DouceCreative", reminderEmail({ ...a, services }));
+    await send(email, "Recordatorio de tu cita · DouceCreative", reminderEmail({ ...a, services }, await apptUrl(a.id)));
     sent++;
   }
   return Response.json({ sent });

@@ -59,7 +59,8 @@ export default function Appointments({ list, cancelLimitMin }: { list: A[]; canc
               <p className="font-medium">{euro(a.total_cents)}</p>
               {a.status === "confirmed" && (
                 <div className="mt-4 flex flex-wrap gap-x-4 items-center">
-                  {canCancel && <button className="btn btn-secondary !min-h-11 !px-4 text-sm" onClick={() => { setErr(""); setTarget(a); }}>Cancelar</button>}
+                  {canCancel && <Link href={`/reservar?cambiar=${a.id}`} className="btn btn-primary !w-auto !min-h-11 !px-4 text-sm">Cambiar hora</Link>}
+                  {canCancel && <button className="btn btn-secondary !w-auto !min-h-11 !px-4 text-sm" onClick={() => { setErr(""); setTarget(a); }}>Cancelar</button>}
                   <a className="link text-sm" target="_blank" rel="noopener" href={whatsappUrl(`Hola, tengo cita el ${label}.`)}><WhatsApp />&nbsp;WhatsApp</a>
                 </div>
               )}

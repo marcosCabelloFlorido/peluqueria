@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { addMonths, addDays, format, getDay, getDaysInMonth, parse } from "date-fns";
 import { es } from "date-fns/locale";
-import { book, fetchMonth, fetchSlots } from "@/app/actions";
+import { book, fetchMonth, fetchSlots, reschedule } from "@/app/actions";
 import { euro, todayMadrid } from "@/lib/time";
 import { whatsappUrl } from "@/lib/calendar";
 import { Alert, Arrow, Back, Next, WhatsApp } from "./Icons";
@@ -14,30 +14,40 @@ type Saved = { ids: string[]; day: string | null; time: string | null; step: 1 |
 type Contact = { name: string; phone: string; email: string };
 const KEY = "dc_booking";
 const CONTACT_KEY = "dc_contact";
+const LAST_KEY = "dc_last";
+type Move = { id: string; token?: string; ids: string[]; services: string; duration: number; current: string };
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const ease = [0.22, 1, 0.36, 1] as const;
 const spring = { type: "spring", stiffness: 260, damping: 30 } as const;
 
-export default function Booking({ services, windowDays, profile }: { services: Service[]; windowDays: number; profile?: Partial<Contact> }) {
+export default function Booking({ services, windowDays, profile, last, move }: { services: Service[]; windowDays: number; profile?: Partial<Contact>; last?: string[]; move?: Move }) {
   const reduce = useReducedMotion();
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [step, setStep] = useState<1 | 2 | 3>(move ? 2 : 1);
   const [dir, setDir] = useState(1);
-  const [ids, setIds] = useState<string[]>([]);
+  const [ids, setIds] = useState<string[]>(move?.ids ?? []);
+  const [lastIds, setLastIds] = useState<string[]>([]);
+  const [touched, setTouched] = useState<Partial<Record<keyof Contact, boolean>>>({});
   const [day, setDay] = useState<string | null>(null);
   const [time, setTime] = useState<string | null>(null);
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
   const [contact, setContact] = useState<Contact>({ name: profile?.name ?? "", phone: profile?.phone ?? "", email: profile?.email ?? "" });
-  const [done, setDone] = useState<{ id: string; starts_at: string; ends_at: string; services: string; day: string; time: string; loggedIn: boolean } | null>(null);
+  const [done, setDone] = useState<Done | null>(null);
   const [pending, start] = useTransition();
   const [hydrated, setHydrated] = useState(false);
 
   const chosen = services.filter((s) => ids.includes(s.id));
   const total = chosen.reduce((a, s) => a + s.price_cents, 0);
-  const duration = chosen.reduce((a, s) => a + s.duration_min, 0);
+  const duration = move?.duration ?? chosen.reduce((a, s) => a + s.duration_min, 0);
 
   // Restaurar selección (p.ej. tras iniciar sesión)
   useEffect(() => {
+    if (move) { setHydrated(true); return; }
+    try {
+      // Atajo "Repetir": última cita de la cuenta o, sin cuenta, la última reservada en este dispositivo.
+      const prev: string[] = last?.length ? last : JSON.parse(localStorage.getItem(LAST_KEY) ?? "[]");
+      setLastIds(prev.filter((id) => services.some((x) => x.id === id)));
+    } catch {}
     try {
       const raw = sessionStorage.getItem(KEY);
       if (raw) {
@@ -53,13 +63,24 @@ export default function Booking({ services, windowDays, profile }: { services: S
       setContact((cur) => ({ name: cur.name || c.name || "", phone: cur.phone || c.phone || "", email: cur.email || c.email || "" }));
     } catch {}
     setHydrated(true);
-  }, [services]);
+  }, [services, last, move]);
   useEffect(() => {
-    if (!hydrated) return;
+    if (!hydrated || move) return;
     try { sessionStorage.setItem(KEY, JSON.stringify({ ids, day, time, step, note } satisfies Saved)); } catch {}
-  }, [hydrated, ids, day, time, step, note]);
+  }, [hydrated, move, ids, day, time, step, note]);
 
-  const contactOk = contact.name.trim().length >= 2 && /^[+\d][\d\s().-]{6,19}$/.test(contact.phone.trim()) && EMAIL_RE.test(contact.email.trim());
+  const invalid: Record<keyof Contact, string> = {
+    name: contact.name.trim().length >= 2 ? "" : "Escribe tu nombre.",
+    phone: /^[+\d][\d\s().-]{6,19}$/.test(contact.phone.trim()) ? "" : "Teléfono no válido. Ej.: 612 345 678",
+    email: EMAIL_RE.test(contact.email.trim()) ? "" : "Email no válido. Ej.: nombre@gmail.com",
+  };
+  const contactOk = !invalid.name && !invalid.phone && !invalid.email;
+  const fieldErr = (k: keyof Contact) => (touched[k] ? invalid[k] : "");
+  const fieldProps = (k: keyof Contact) => ({
+    "aria-invalid": !!fieldErr(k), "aria-describedby": fieldErr(k) ? `err-${k}` : undefined,
+    onBlur: () => setTouched((t) => ({ ...t, [k]: true })),
+    className: `field ${fieldErr(k) ? "!border-ink border-2" : ""}`,
+  });
   const setC = (k: keyof Contact) => (e: React.ChangeEvent<HTMLInputElement>) => setContact((c) => ({ ...c, [k]: e.target.value }));
 
   const go = (s: 1 | 2 | 3) => { setDir(s > step ? 1 : -1); setStep(s); setError(""); };
@@ -75,6 +96,15 @@ export default function Booking({ services, windowDays, profile }: { services: S
 
   function confirm() {
     if (!day || !time) return;
+    if (!contactOk) {
+      // Marca todos los campos y lleva el foco al primero con error.
+      setTouched({ name: true, phone: true, email: true });
+      const first = (["name", "phone", "email"] as const).find((k) => invalid[k]);
+      const el = document.querySelector<HTMLInputElement>(`input[name="${first}"]`);
+      el?.focus({ preventScroll: true });
+      el?.scrollIntoView({ block: "center", behavior: "smooth" }); // centrado: no queda bajo la barra fija
+      return;
+    }
     setError("");
     start(async () => {
       const r = await book({ serviceIds: ids, day, time, note, ...contact });
@@ -84,8 +114,18 @@ export default function Booking({ services, windowDays, profile }: { services: S
         return;
       }
       try { sessionStorage.removeItem(KEY); } catch {}
-      try { localStorage.setItem(CONTACT_KEY, JSON.stringify(contact)); } catch {}
+      try { localStorage.setItem(CONTACT_KEY, JSON.stringify(contact)); localStorage.setItem(LAST_KEY, JSON.stringify(ids)); } catch {}
       setDone({ id: r.id!, starts_at: r.starts_at!, ends_at: r.ends_at!, services: chosen.map((s) => s.name).join(" + "), day, time, loggedIn: !!r.loggedIn });
+    });
+  }
+
+  function moveTo() {
+    if (!move || !day || !time) return;
+    setError("");
+    start(async () => {
+      const r = await reschedule({ id: move.id, token: move.token, day, time });
+      if ("error" in r && r.error) { setError(r.error); if ("refresh" in r && r.refresh) setTime(null); return; }
+      setDone({ id: move.id, starts_at: r.starts_at ?? "", ends_at: r.ends_at ?? "", services: move.services, day, time, loggedIn: !move.token, moved: true, token: move.token });
     });
   }
 
@@ -95,13 +135,23 @@ export default function Booking({ services, windowDays, profile }: { services: S
   const slide = { x: reduce ? 0 : dir * 40, opacity: 0 };
   return (
     <div>
-      <Progress step={step} onBack={step > 1 ? () => go((step - 1) as 1 | 2) : undefined} />
+      {!move && <Progress step={step} onBack={step > 1 ? () => go((step - 1) as 1 | 2) : undefined} />}
       <AnimatePresence mode="wait" initial={false} custom={dir}>
         <motion.section key={step} initial={slide} animate={{ x: 0, opacity: 1 }} exit={{ x: reduce ? 0 : -dir * 40, opacity: 0 }} transition={{ duration: 0.3, ease }}>
           {step === 1 && (
             <>
               <h1 className="display text-4xl mb-1">¿Qué te hacemos?</h1>
               <p className="text-g4 mb-6">Elige uno o varios servicios.</p>
+              {lastIds.length > 0 && !ids.length && (
+                <button onClick={() => { setIds(lastIds); setDay(null); setTime(null); go(2); }}
+                  className="w-full text-left card p-4 mb-5 flex items-center justify-between gap-3 border-ink active:scale-[.98] transition-transform">
+                  <span>
+                    <span className="block text-xs text-g4 uppercase tracking-wider">Lo de siempre</span>
+                    <span className="block font-medium">{services.filter((s) => lastIds.includes(s.id)).map((s) => s.name).join(" + ")}</span>
+                  </span>
+                  <span className="flex items-center gap-2 shrink-0 font-medium">{euro(services.filter((s) => lastIds.includes(s.id)).reduce((a, s) => a + s.price_cents, 0))} <Arrow /></span>
+                </button>
+              )}
               <ul className="flex flex-col gap-3">
                 {services.map((s) => {
                   const on = ids.includes(s.id);
@@ -126,9 +176,14 @@ export default function Booking({ services, windowDays, profile }: { services: S
             </>
           )}
           {step === 2 && (
-            <DayTime duration={duration} windowDays={windowDays} day={day} time={time}
+            <DayTime duration={duration} windowDays={windowDays} day={day} time={time} move={move}
               setDay={(d) => { setDay(d); setTime(null); }} setTime={setTime}
-              footer={<button className="btn btn-primary" disabled={!day || !time} onClick={() => go(3)}>Continuar <Arrow /></button>} />
+              title={move ? "Cambia tu cita" : undefined}
+              intro={move && <p className="text-g4 -mt-4 mb-6 first-letter:uppercase">Ahora: {move.current}<br /><span className="text-sm">{move.services}</span></p>}
+              error={move ? error : ""}
+              footer={move
+                ? <button className="btn btn-primary" disabled={!day || !time || pending} onClick={moveTo}>{pending ? "Cambiando…" : "Cambiar a esta hora"} <Arrow /></button>
+                : <button className="btn btn-primary" disabled={!day || !time} onClick={() => go(3)}>Continuar <Arrow /></button>} />
           )}
           {step === 3 && day && time && (
             <>
@@ -144,15 +199,18 @@ export default function Booking({ services, windowDays, profile }: { services: S
               <h2 className="display text-2xl mt-8 mb-1">Tus datos</h2>
               <p className="text-sm text-g4 mb-3">Te enviaremos la confirmación y el recordatorio a este email.</p>
               <div className="flex flex-col gap-3">
-                <input className="field" name="name" placeholder="Nombre" autoComplete="name" maxLength={100} value={contact.name} onChange={setC("name")} required />
-                <input className="field" name="phone" type="tel" placeholder="Teléfono" autoComplete="tel" maxLength={20} value={contact.phone} onChange={setC("phone")} required />
-                <input className="field" name="email" type="email" placeholder="Email" autoComplete="email" maxLength={200} value={contact.email} onChange={setC("email")} required />
+                <input {...fieldProps("name")} name="name" placeholder="Nombre" autoComplete="name" maxLength={100} value={contact.name} onChange={setC("name")} required />
+                {fieldErr("name") && <FieldError id="err-name">{fieldErr("name")}</FieldError>}
+                <input {...fieldProps("phone")} name="phone" type="tel" inputMode="tel" placeholder="Teléfono" autoComplete="tel" maxLength={20} value={contact.phone} onChange={setC("phone")} required />
+                {fieldErr("phone") && <FieldError id="err-phone">{fieldErr("phone")}</FieldError>}
+                <input {...fieldProps("email")} name="email" type="email" inputMode="email" placeholder="Email" autoComplete="email" maxLength={200} value={contact.email} onChange={setC("email")} required />
+                {fieldErr("email") && <FieldError id="err-email">{fieldErr("email")}</FieldError>}
               </div>
               <label className="block mt-5 text-sm text-g4" htmlFor="note">Nota para el peluquero (opcional)</label>
               <textarea id="note" className="field mt-1 py-3 min-h-24" maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} />
               {error && <p role="alert" className="mt-3 text-sm border border-ink rounded-xl px-3 py-2 flex gap-2 items-start"><Alert />{error}</p>}
               <Bar>
-                <button className="btn btn-primary" disabled={pending || !contactOk} onClick={confirm}>{pending ? "Reservando…" : "Confirmar cita"} <Arrow /></button>
+                <button className="btn btn-primary" disabled={pending} aria-disabled={!contactOk} onClick={confirm}>{pending ? "Reservando…" : "Confirmar cita"} <Arrow /></button>
               </Bar>
             </>
           )}
@@ -161,6 +219,10 @@ export default function Booking({ services, windowDays, profile }: { services: S
     </div>
   );
 }
+
+const FieldError = ({ id, children }: { id: string; children: React.ReactNode }) => (
+  <p id={id} className="-mt-1 text-sm flex gap-1.5 items-center"><Alert />{children}</p>
+);
 
 const Bar = ({ children }: { children: React.ReactNode }) => (
   <div className="sticky-bar"><div className="mx-auto max-w-md">{children}</div></div>
@@ -182,7 +244,7 @@ function Progress({ step, onBack }: { step: number; onBack?: () => void }) {
   );
 }
 
-function DayTime(p: { duration: number; windowDays: number; day: string | null; time: string | null; setDay: (d: string) => void; setTime: (t: string) => void; footer: React.ReactNode }) {
+function DayTime(p: { duration: number; windowDays: number; day: string | null; time: string | null; setDay: (d: string) => void; setTime: (t: string) => void; footer: React.ReactNode; move?: Move; title?: string; intro?: React.ReactNode; error?: string }) {
   const reduce = useReducedMotion();
   const today = todayMadrid();
   const last = format(addDays(new Date(), p.windowDays), "yyyy-MM-dd");
@@ -190,6 +252,9 @@ function DayTime(p: { duration: number; windowDays: number; day: string | null; 
   const [open, setOpen] = useState<string[] | null>(null);
   const [slots, setSlots] = useState<string[] | null>(null);
   const [next, setNext] = useState<string | null>(null);
+  const slotsRef = useRef<HTMLDivElement>(null);
+  const wantScroll = useRef(false);
+  const moveId = p.move?.id, moveToken = p.move?.token;
 
   useEffect(() => {
     let off = false;
@@ -200,8 +265,15 @@ function DayTime(p: { duration: number; windowDays: number; day: string | null; 
 
   const loadSlots = useCallback((d: string) => {
     setSlots(null);
-    fetchSlots(d, p.duration).then(setSlots);
-  }, [p.duration]);
+    fetchSlots(d, p.duration, moveId ? { id: moveId, token: moveToken } : undefined).then(setSlots);
+  }, [p.duration, moveId, moveToken]);
+  // Tras tocar un día: lleva las horas a la vista (si no, quedan bajo la barra fija).
+  useEffect(() => {
+    if (slots && wantScroll.current) {
+      wantScroll.current = false;
+      slotsRef.current?.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+    }
+  }, [slots, reduce]);
   useEffect(() => { if (p.day) loadSlots(p.day); else setSlots(null); }, [p.day, loadSlots]);
 
   useEffect(() => {
@@ -218,7 +290,8 @@ function DayTime(p: { duration: number; windowDays: number; day: string | null; 
 
   return (
     <>
-      <h1 className="display text-4xl mb-6">Elige día y hora</h1>
+      <h1 className="display text-4xl mb-6">{p.title ?? "Elige día y hora"}</h1>
+      {p.intro}
       <div className="flex items-center justify-between mb-3">
         <button className="size-11 grid place-items-center disabled:opacity-20" disabled={!canPrev} onClick={() => shift(-1)} aria-label="Mes anterior"><Back /></button>
         <p className="first-letter:uppercase font-medium" aria-live="polite">{format(first, "LLLL yyyy", { locale: es })}</p>
@@ -234,7 +307,7 @@ function DayTime(p: { duration: number; windowDays: number; day: string | null; 
             const sel = p.day === d;
             return (
               <button key={d} disabled={!ok} aria-pressed={sel} aria-label={format(parse(d, "yyyy-MM-dd", new Date()), "d 'de' MMMM", { locale: es })}
-                onClick={() => p.setDay(d)}
+                onClick={() => { wantScroll.current = true; p.setDay(d); }}
                 className={`relative h-11 grid place-items-center text-sm rounded-full ${ok ? "" : "text-g3/60"} ${open === null ? "skeleton !rounded-full m-0.5" : ""}`}>
                 {sel && <motion.span layoutId="dayPill" className="absolute inset-0 m-auto size-10 rounded-full bg-ink" transition={spring} />}
                 <span className={`relative ${sel ? "text-paper" : ""}`}>{Number(d.slice(8))}</span>
@@ -245,14 +318,21 @@ function DayTime(p: { duration: number; windowDays: number; day: string | null; 
         </div>
       </motion.div>
 
-      <div className="mt-6 min-h-40">
+      <div ref={slotsRef} className="mt-6 min-h-40 scroll-mt-4">
         {p.day && slots === null && <div className="grid grid-cols-4 gap-2">{Array.from({ length: 8 }, (_, i) => <div key={i} className="skeleton h-11" />)}</div>}
         {slots && slots.length > 0 && (
-          <div className="grid grid-cols-4 gap-2" role="group" aria-label="Horas disponibles">
-            {slots.map((t, i) => (
-              <motion.button key={p.day + t} initial={{ opacity: 0, y: reduce ? 0 : 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i, 20) * 0.045, duration: 0.3, ease }}
-                aria-pressed={p.time === t} onClick={() => p.setTime(t)}
-                className={`h-11 rounded-xl border text-sm ${p.time === t ? "bg-ink text-paper border-ink" : "border-g2"}`}>{t}</motion.button>
+          <div className="flex flex-col gap-5">
+            {([["Mañana", slots.filter((t) => t < "14:00")], ["Tarde", slots.filter((t) => t >= "14:00")]] as const).filter(([, l]) => l.length).map(([name, list]) => (
+              <div key={name}>
+                <p className="text-xs text-g4 uppercase tracking-wider mb-2">{name}</p>
+                <div className="grid grid-cols-4 gap-2" role="group" aria-label={`Horas disponibles por la ${name.toLowerCase()}`}>
+                  {list.map((t, i) => (
+                    <motion.button key={p.day + t} initial={{ opacity: 0, y: reduce ? 0 : 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: Math.min(i, 20) * 0.03, duration: 0.3, ease }}
+                      aria-pressed={p.time === t} onClick={() => p.setTime(t)}
+                      className={`h-11 rounded-xl border text-sm ${p.time === t ? "bg-ink text-paper border-ink" : "border-g2"}`}>{t}</motion.button>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         )}
@@ -264,38 +344,41 @@ function DayTime(p: { duration: number; windowDays: number; day: string | null; 
         )}
         {!p.day && <p className="text-g4 text-sm text-center py-6">Toca un día para ver las horas.</p>}
       </div>
+      {p.error && <p role="alert" className="mt-3 text-sm border border-ink rounded-xl px-3 py-2 flex gap-2 items-start"><Alert />{p.error}</p>}
       <Bar>{p.footer}</Bar>
     </>
   );
 }
 
-type Done = { id: string; starts_at: string; ends_at: string; services: string; day: string; time: string; loggedIn: boolean };
+type Done = { id: string; starts_at: string; ends_at: string; services: string; day: string; time: string; loggedIn: boolean; moved?: boolean; token?: string };
 
 function Success({ d, email, onAgain }: { d: Done; email: string; onAgain: () => void }) {
   const label = format(parse(d.day, "yyyy-MM-dd", new Date()), "EEEE d 'de' MMMM", { locale: es });
   const dlg = useRef<HTMLDialogElement>(null);
   useEffect(() => {
-    if (d.loggedIn) return;
+    if (d.loggedIn || d.moved) return;
     const t = setTimeout(() => { if (dlg.current && !dlg.current.open) dlg.current.showModal(); }, 1100);
     return () => clearTimeout(t);
-  }, [d.loggedIn]);
+  }, [d.loggedIn, d.moved]);
   return (
     <div className="text-center pt-10">
       <svg width="88" height="88" viewBox="0 0 88 88" className="mx-auto" aria-hidden="true">
         <motion.circle cx="44" cy="44" r="40" fill="none" stroke="currentColor" strokeWidth="2" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.6, ease }} />
         <motion.path d="M27 45l12 12 22-26" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ delay: 0.5, duration: 0.4, ease }} />
       </svg>
-      <h1 className="display text-4xl mt-6">¡Cita confirmada!</h1>
+      <h1 className="display text-4xl mt-6">{d.moved ? "¡Cita cambiada!" : "¡Cita confirmada!"}</h1>
       <p className="text-g4 mt-2 first-letter:uppercase">{label} · {d.time}</p>
       <p className="text-g4 text-sm">{d.services}</p>
-      <p className="mt-3 text-sm text-g4">Te hemos enviado la confirmación a {email} y te recordaremos antes de la cita.</p>
+      <p className="mt-3 text-sm text-g4">{d.moved ? "Te hemos enviado la nueva hora por email." : `Te hemos enviado la confirmación a ${email} y te recordaremos antes de la cita.`}</p>
       <div className="mt-8 flex flex-col gap-2 items-center">
-        {d.loggedIn
+        {d.moved && d.token
+          ? <Link href={`/cita/${d.id}?t=${encodeURIComponent(d.token)}`} className="btn btn-primary">Ver mi cita <Arrow /></Link>
+          : d.loggedIn
           ? <Link href="/citas" className="btn btn-primary">Ver mis citas <Arrow /></Link>
           : <button className="btn btn-primary" onClick={onAgain}>Reservar otra cita <Arrow /></button>}
         <a className="link" target="_blank" rel="noopener" href={whatsappUrl(`Hola, tengo cita el ${label} a las ${d.time}.`)}><WhatsApp />&nbsp;Escribir por WhatsApp</a>
       </div>
-      {!d.loggedIn && (
+      {!d.loggedIn && !d.moved && (
         <dialog ref={dlg} aria-labelledby="login-ttl" className="m-auto w-[min(92vw,22rem)] rounded-3xl bg-paper text-ink border border-g2 p-6 text-center backdrop:bg-black/40">
           <h2 id="login-ttl" className="display text-2xl">¿Quieres iniciar sesión?</h2>
           <p className="text-sm text-g4 mt-2">Así verás y cancelarás tus citas desde la app, y reservar será más rápido.</p>

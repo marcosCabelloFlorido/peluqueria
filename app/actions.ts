@@ -4,13 +4,16 @@ import { revalidatePath } from "next/cache";
 import { supabaseServer, supabaseService } from "@/lib/supabase/server";
 import { getAvailableSlots, getMonthAvailability } from "@/lib/availability";
 import { localToDate } from "@/lib/time";
-import { adminNewEmail, cancellationEmail, confirmationEmail, send } from "@/lib/email";
+import { adminNewEmail, cancellationEmail, confirmationEmail, rescheduleEmail, send } from "@/lib/email";
+import { apptUrl, authorizeAppt, canChange, cancelLimitMin, verifyApptToken } from "@/lib/apptAccess";
 
 const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const dur = z.number().int().min(5).max(600);
 
-export const fetchSlots = async (d: string, duration: number) =>
-  getAvailableSlots(day.parse(d), dur.parse(duration));
+export async function fetchSlots(d: string, duration: number, move?: { id: string; token?: string }) {
+  const a = move ? await authorizeAppt(move.id, move.token) : null;
+  return getAvailableSlots(day.parse(d), dur.parse(duration), a ?? undefined);
+}
 export const fetchMonth = async (m: string, duration: number) =>
   getMonthAvailability(z.string().regex(/^\d{4}-\d{2}$/).parse(m), dur.parse(duration));
 
@@ -23,6 +26,8 @@ const ERRORS: Record<string, string> = {
   exclusive_services: "No puedes combinar esos dos cortes.",
   invalid_contact: "Revisa tu nombre, teléfono y email.",
   too_late: "Ya no se puede cancelar online. Escribe por WhatsApp.",
+  too_late_change: "Ya no se puede cambiar online. Escribe por WhatsApp.",
+  not_found: "Enlace no válido o cita no encontrada.",
   not_cancellable: "Esta cita no se puede cancelar.",
 };
 const msg = (e: { message: string }) =>
@@ -73,7 +78,7 @@ export async function book(input: { serviceIds: string[]; day: string; time: str
     const l = await loadAppt(data as string);
     if (l) {
       ends = l.appt.ends_at;
-      await send(l.email, "Cita confirmada · DouceCreative", confirmationEmail(l.appt, l.hasAccount));
+      await send(l.email, "Cita confirmada · DouceCreative", confirmationEmail(l.appt, await apptUrl(l.appt.id)));
       await send(process.env.ADMIN_EMAIL, "Nueva cita", adminNewEmail(l.appt, l.name));
     }
   } catch (e) { console.error("[book] email", e); }
@@ -89,10 +94,20 @@ export async function claimAppointment(id: string) {
   await supabaseService().from("appointments").update({ user_id: user.id }).eq("id", id).is("user_id", null);
 }
 
-export async function cancel(id: string) {
-  const sb = await supabaseServer();
-  const { error } = await sb.rpc("cancel_appointment", { p_id: id });
-  if (error) return { error: msg(error) };
+export async function cancel(id: string, token?: string) {
+  if (token) {
+    // Desde el enlace del email (sin sesión): mismas reglas que cancel_appointment.
+    if (!(await verifyApptToken(id, token))) return { error: msg({ message: "not_found" }) };
+    const a = await authorizeAppt(id, token);
+    if (!a || a.status !== "confirmed") return { error: ERRORS.not_cancellable };
+    if (!canChange(a, await cancelLimitMin())) return { error: ERRORS.too_late };
+    const { error } = await supabaseService().from("appointments").update({ status: "cancelled" }).eq("id", id).eq("status", "confirmed");
+    if (error) return { error: msg(error) };
+  } else {
+    const sb = await supabaseServer();
+    const { error } = await sb.rpc("cancel_appointment", { p_id: id });
+    if (error) return { error: msg(error) };
+  }
   try {
     const l = await loadAppt(id);
     if (l) {
@@ -100,8 +115,34 @@ export async function cancel(id: string) {
       await send(process.env.ADMIN_EMAIL, "Cita cancelada", cancellationEmail(l.appt));
     }
   } catch (e) { console.error("[cancel] email", e); }
-  revalidatePath("/citas"); revalidatePath("/admin", "layout");
+  revalidatePath("/citas"); revalidatePath(`/cita/${id}`); revalidatePath("/admin", "layout");
   return { ok: true };
+}
+
+/** Mueve una cita a otro día/hora manteniendo servicios, precio y datos. */
+export async function reschedule(input: { id: string; token?: string; day: string; time: string }) {
+  const a = await authorizeAppt(input.id, input.token);
+  if (!a || a.status !== "confirmed") return { error: ERRORS.not_cancellable };
+  if (!canChange(a, await cancelLimitMin())) return { error: ERRORS.too_late_change };
+  const d = day.parse(input.day), t = z.string().regex(/^\d{2}:\d{2}$/).parse(input.time);
+  const minutes = Math.round((+new Date(a.ends_at) - +new Date(a.starts_at)) / 60000);
+  const slots = await getAvailableSlots(d, minutes, a);
+  if (!slots.includes(t)) return { error: ERRORS.slot_taken, refresh: true };
+  const starts = localToDate(d, t), ends = new Date(+starts + minutes * 60000);
+  const { error } = await supabaseService().from("appointments")
+    .update({ starts_at: starts.toISOString(), ends_at: ends.toISOString(), reminder_sent_at: null })
+    .eq("id", a.id).eq("status", "confirmed");
+  // 23P01 = exclusion_violation: alguien reservó esa hora en el último momento.
+  if (error) return error.code === "23P01" ? { error: ERRORS.slot_taken, refresh: true } : { error: msg(error) };
+  try {
+    const l = await loadAppt(a.id);
+    if (l) {
+      await send(l.email, "Cita cambiada · DouceCreative", rescheduleEmail(l.appt, await apptUrl(a.id)));
+      await send(process.env.ADMIN_EMAIL, "Cita cambiada", rescheduleEmail(l.appt));
+    }
+  } catch (e) { console.error("[reschedule] email", e); }
+  revalidatePath("/citas"); revalidatePath(`/cita/${a.id}`); revalidatePath("/admin", "layout");
+  return { ok: true, starts_at: starts.toISOString(), ends_at: ends.toISOString() };
 }
 
 export async function updateProfile(f: FormData) {

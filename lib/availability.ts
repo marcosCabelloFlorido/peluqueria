@@ -14,9 +14,15 @@ async function ctx(fromDay: string, toDay: string) {
   return { hours: hours ?? [], settings: settings!, busy: busy ?? [] };
 }
 
-export async function getAvailableSlots(day: string, durationMin: number) {
+/** `ignore`: rango de la propia cita que se está moviendo (no cuenta como ocupado). */
+export async function getAvailableSlots(day: string, durationMin: number, ignore?: { starts_at: string; ends_at: string }) {
   const { hours, settings, busy } = await ctx(day, day);
-  return computeSlots({ day, durationMin, hours, busy, now: new Date(), stepMin: settings.slot_step_min, minNoticeMin: settings.min_notice_min });
+  const last = formatInTimeZone(addDays(new Date(), settings.booking_window_days), TZ, "yyyy-MM-dd");
+  if (day > last) return [];
+  const free = ignore
+    ? busy.filter((b: { starts_at: string; ends_at: string }) => !(+new Date(b.starts_at) === +new Date(ignore.starts_at) && +new Date(b.ends_at) === +new Date(ignore.ends_at)))
+    : busy;
+  return computeSlots({ day, durationMin, hours, busy: free, now: new Date(), stepMin: settings.slot_step_min, minNoticeMin: settings.min_notice_min });
 }
 
 /** Días del mes (yyyy-MM-dd) con al menos un hueco. */

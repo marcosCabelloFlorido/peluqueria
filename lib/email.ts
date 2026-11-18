@@ -23,9 +23,11 @@ export async function send(to: string | undefined, subject: string, html: string
   if (error) console.error("[email] error", error);
 }
 
-export const confirmationEmail = (a: Appt, hasAccount = false) =>
-  shell("Cita confirmada", details(a) + (hasAccount ? btn(`${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/citas`, "Ver mis citas") : ""));
-export const reminderEmail = (a: Appt) => shell("Te esperamos pronto", details(a));
+// `manage`: enlace firmado para cambiar la hora o cancelar sin iniciar sesión.
+const manageBtn = (manage?: string) => (manage ? btn(manage, "Cambiar hora o cancelar") : "");
+export const confirmationEmail = (a: Appt, manage?: string) => shell("Cita confirmada", details(a) + manageBtn(manage));
+export const rescheduleEmail = (a: Appt, manage?: string) => shell("Cita cambiada", details(a) + manageBtn(manage));
+export const reminderEmail = (a: Appt, manage?: string) => shell("Te esperamos pronto", details(a) + manageBtn(manage));
 export const cancellationEmail = (a: Appt) => shell("Cita cancelada", details(a));
 export const adminNewEmail = (a: Appt, name: string) => shell("Nueva cita", `<p>${name}</p>` + details(a));
 
