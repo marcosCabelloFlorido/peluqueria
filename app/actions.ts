@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { supabaseServer, supabaseService } from "@/lib/supabase/server";
 import { getAvailableSlots, getMonthAvailability } from "@/lib/availability";
 import { localToDate } from "@/lib/time";
-import { adminNewEmail, cancellationEmail, confirmationEmail, rescheduleEmail, send } from "@/lib/email";
+import { adminNewEmail, cancellationEmail, confirmationEmail, loginCodeEmail, rescheduleEmail, send } from "@/lib/email";
+import { hashCode, newCode, normEmail, sameHash } from "@/lib/loginCode";
 import { apptUrl, authorizeAppt, canChange, cancelLimitMin, verifyApptToken } from "@/lib/apptAccess";
 
 const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
@@ -155,6 +156,55 @@ export async function updateProfile(f: FormData) {
     email_reminders: f.get("email_reminders") === "on",
   }).eq("id", user.id);
   revalidatePath("/perfil");
+}
+
+// Acceso por código: lo generamos y enviamos nosotros (Resend). Si coincide, abrimos sesión.
+const loginEmail = z.string().trim().max(200).email();
+const CODE_TTL_MIN = 10, RESEND_WAIT_S = 45, MAX_TRIES = 5;
+
+export async function requestLoginCode(rawEmail: string): Promise<{ ok: true } | { error: string }> {
+  const p = loginEmail.safeParse(rawEmail);
+  if (!p.success) return { error: "El email no es válido." };
+  const email = normEmail(p.data);
+  const svc = supabaseService();
+  const { data: prev } = await svc.from("login_codes").select("sent_at").eq("email", email).maybeSingle();
+  if (prev && Date.now() - +new Date(prev.sent_at) < RESEND_WAIT_S * 1000)
+    return { error: "Espera unos segundos antes de pedir otro código." };
+  const code = newCode();
+  const { error } = await svc.from("login_codes").upsert({
+    email, code_hash: await hashCode(email, code), attempts: 0,
+    sent_at: new Date().toISOString(), expires_at: new Date(Date.now() + CODE_TTL_MIN * 60000).toISOString(),
+  });
+  if (error) { console.error("[login] store", error); return { error: "No se pudo enviar el código. Inténtalo de nuevo." }; }
+  if (!process.env.RESEND_API_KEY && process.env.NODE_ENV !== "production") console.log(`[login:dev] ${email} código ${code}`);
+  await send(email, `${code} es tu código de DouceCreative`, loginCodeEmail(code));
+  return { ok: true };
+}
+
+export async function verifyLoginCode(rawEmail: string, rawCode: string): Promise<{ ok: true } | { error: string }> {
+  const bad = { error: "Código incorrecto o caducado. Revísalo o pide uno nuevo." };
+  const p = loginEmail.safeParse(rawEmail);
+  const code = rawCode.replace(/\s/g, "");
+  if (!p.success || !/^\d{6}$/.test(code)) return bad;
+  const email = normEmail(p.data);
+  const svc = supabaseService();
+  const { data: row } = await svc.from("login_codes").select("code_hash,expires_at,attempts").eq("email", email).maybeSingle();
+  if (!row || +new Date(row.expires_at) < Date.now()) return bad;
+  if (row.attempts >= MAX_TRIES) return { error: "Demasiados intentos. Pide un código nuevo." };
+  if (!sameHash(row.code_hash, await hashCode(email, code))) {
+    await svc.from("login_codes").update({ attempts: row.attempts + 1 }).eq("email", email);
+    return bad;
+  }
+  await svc.from("login_codes").delete().eq("email", email); // un solo uso
+  // Sesión sin contraseña: enlace mágico generado en servidor y canjeado aquí mismo (fija las cookies).
+  const { data, error } = await svc.auth.admin.generateLink({ type: "magiclink", email });
+  const hash = data?.properties?.hashed_token;
+  if (error || !hash) { console.error("[login] generateLink", error); return { error: "No se pudo iniciar sesión. Inténtalo de nuevo." }; }
+  // Usuario nuevo → el tipo es "signup", existente → "magiclink": se usa el que devuelve Supabase.
+  const type = (data.properties.verification_type ?? "magiclink") as "magiclink" | "signup";
+  const { error: e2 } = await (await supabaseServer()).auth.verifyOtp({ token_hash: hash, type });
+  if (e2) { console.error("[login] verifyOtp", e2); return { error: "No se pudo iniciar sesión. Inténtalo de nuevo." }; }
+  return { ok: true };
 }
 
 export async function signOut() {

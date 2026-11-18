@@ -29,6 +29,10 @@ export const confirmationEmail = (a: Appt, manage?: string) => shell("Cita confi
 export const rescheduleEmail = (a: Appt, manage?: string) => shell("Cita cambiada", details(a) + manageBtn(manage));
 export const reminderEmail = (a: Appt, manage?: string) => shell("Te esperamos pronto", details(a) + manageBtn(manage));
 export const cancellationEmail = (a: Appt) => shell("Cita cancelada", details(a));
+export const loginCodeEmail = (code: string) =>
+  shell("Tu código de acceso", `<p style="font-size:16px;line-height:1.6;margin:0 0 16px;color:#a1a1aa">Introduce este código en DouceCreative:</p>
+<p style="font-size:34px;letter-spacing:8px;font-weight:600;margin:0 0 16px">${code}</p>
+<p style="font-size:14px;color:#71717a;margin:0">Caduca en 10 minutos. Si no lo has pedido tú, ignora este email.</p>`);
 export const adminNewEmail = (a: Appt, name: string) => shell("Nueva cita", `<p>${name}</p>` + details(a));
 
 const esc = (t: string) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");

@@ -3,6 +3,7 @@ import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabaseBrowser } from "@/lib/supabase/client";
+import { requestLoginCode, verifyLoginCode } from "@/app/actions";
 import { Alert, Arrow, Back, Eye, EyeOff } from "@/components/Icons";
 import ThemeToggle from "@/components/ThemeToggle";
 
@@ -43,11 +44,8 @@ function Form() {
   };
 
   async function sendCode() {
-    const { error } = await sb.auth.signInWithOtp({ email: email.trim(), options: { emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}` } });
-    if (error) {
-      setErr(REASONS[error.code ?? ""] ?? "No se pudo enviar el código. Inténtalo de nuevo en unos minutos.");
-      return false;
-    }
+    const r = await requestLoginCode(email);
+    if ("error" in r) { setErr(r.error); return false; }
     return true;
   }
 
@@ -65,9 +63,9 @@ function Form() {
       return setBusy(false);
     }
     if (mode === "code") {
-      const { error } = await sb.auth.verifyOtp({ email: mail, token: String(f.get("code") ?? "").replace(/\s/g, ""), type: "email" });
-      if (error) {
-        setErr(REASONS[error.code ?? ""] ?? "Código incorrecto o caducado. Revísalo o pide uno nuevo.");
+      const r = await verifyLoginCode(mail, String(f.get("code") ?? ""));
+      if ("error" in r) {
+        setErr(r.error);
         return setBusy(false);
       }
       window.location.href = next;
@@ -152,7 +150,7 @@ function Form() {
           <>
             <label htmlFor="l-code" className="text-sm text-g4 mt-2">Código</label>
             <input id="l-code" className="field text-center text-2xl tracking-[.4em] tabular-nums" name="code" inputMode="numeric" {...errProps} placeholder="······"
-              autoComplete="one-time-code" pattern="\d{6,8}" maxLength={8} autoFocus required />
+              autoComplete="one-time-code" pattern="\d{6}" maxLength={6} autoFocus required />
           </>
         )}
         {pwMode && (
