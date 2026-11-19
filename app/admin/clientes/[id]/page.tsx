@@ -83,10 +83,6 @@ export default async function Cliente({ params, searchParams }: { params: Promis
       <div className="grid grid-cols-2 gap-3">
         {stat("Último corte", s.lastVisit ? fmt(s.lastVisit, "d MMM yyyy") : "—", s.lastVisit ? ago(s.lastVisit) : "Sin cortes aún")}
         {stat("Visitas", String(s.visits))}
-        {stat("Total gastado", euro(s.total))}
-        {stat("Ticket medio", s.avgTicket == null ? "—" : euro(s.avgTicket))}
-        {stat("Servicio habitual", s.topService ?? "—")}
-        {stat("Frecuencia", s.avgGapDays == null ? "—" : `cada ${s.avgGapDays} días`, "Media entre visitas")}
         <div className="col-span-2">{stat("Próxima cita", s.nextAppt ? fmt(s.nextAppt, "EEEE d 'de' MMMM, HH:mm") : "Sin cita")}</div>
       </div>
 
@@ -110,7 +106,7 @@ export default async function Cliente({ params, searchParams }: { params: Promis
       </DirtyForm>
       {c.user_id && <p className="text-xs text-g3 mt-2 px-1">Tiene cuenta en la app.</p>}
 
-      <h2 className="display text-2xl mt-8 mb-3">Notas</h2>
+      <h2 className="display text-2xl mt-8 mb-3">Detalles técnicos</h2>
       <ClientNotes id={c.id} initial={c.notes} />
 
       <h2 className="display text-2xl mt-8 mb-3">Fotos</h2>
