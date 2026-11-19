@@ -216,7 +216,7 @@ export default async function Facturacion({ searchParams }: { searchParams: Prom
       </div>
       {partialNote && (
         <p className="text-xs text-g3 mt-2 px-1">
-          Periodo en curso: se compara con los mismos {el.days} {el.days === 1 ? "día" : "días"} de cada periodo. {PREV_LABEL[view]} completo: {euro(sPrevFull.revenue)}.
+          Periodo en curso: se compara con los mismos {el.days} {el.days === 1 ? "día" : "días"} de cada periodo. Total de {PREV_LABEL[view].toLowerCase()}: {euro(sPrevFull.revenue)}.
         </p>
       )}
 

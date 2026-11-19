@@ -13,14 +13,21 @@ const details = (a: Appt) =>
 const btn = (href: string, label: string) =>
   `<a href="${href}" style="display:inline-block;background:#fafafa;color:#000;padding:12px 20px;border-radius:8px;font-weight:500;text-decoration:none">${label}</a>`;
 
-export async function send(to: string | undefined, subject: string, html: string) {
+/** Devuelve `true` si el proveedor aceptó el email (o en desarrollo, sin clave). */
+export async function send(to: string | undefined, subject: string, html: string): Promise<boolean> {
   const key = process.env.RESEND_API_KEY;
-  if (!to) return;
-  if (!key) return void console.log(`[email:dev] ${to} · ${subject}`);
-  const { error } = await new Resend(key).emails.send({
-    from: process.env.EMAIL_FROM ?? "DouceCreative <onboarding@resend.dev>", to, subject, html,
-  });
-  if (error) console.error("[email] error", error);
+  if (!to) return false;
+  if (!key) { console.log(`[email:dev] ${to} · ${subject}`); return true; }
+  try {
+    const { error } = await new Resend(key).emails.send({
+      from: process.env.EMAIL_FROM ?? "DouceCreative <onboarding@resend.dev>", to, subject, html,
+    });
+    if (error) { console.error("[email] error", error); return false; }
+    return true;
+  } catch (e) {
+    console.error("[email] error", e);
+    return false;
+  }
 }
 
 // `manage`: enlace firmado para cambiar la hora o cancelar sin iniciar sesión.

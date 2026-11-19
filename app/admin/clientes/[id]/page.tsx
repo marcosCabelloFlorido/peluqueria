@@ -19,6 +19,7 @@ const ERR: Record<string, string> = {
   invalido: "Revisa el nombre y el email.",
   duplicado: "Ya existe otro cliente con ese email.",
   baja: "Este cliente no quiere recibir avisos, no se ha enviado.",
+  envio: "El email no se pudo enviar. No se ha marcado como avisado; inténtalo más tarde.",
   fallo: "No se pudo completar. Inténtalo de nuevo.",
 };
 const ago = (iso: string) => formatDistanceToNowStrict(new Date(iso), { locale: es, addSuffix: true });

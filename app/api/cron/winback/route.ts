@@ -24,7 +24,7 @@ export async function GET(req: Request) {
   // winback_due: nunca avisado, o avisado antes de su última visita (nuevo episodio).
   const { data: cands } = await svc
     .from("client_stats")
-    .select("id,email,full_name,user_id,last_visit")
+    .select("id,email,full_name,user_id,last_visit,last_winback_sent_at")
     .eq("marketing_opt_out", false).eq("winback_due", true)
     .gt("visits", 0).lt("last_visit", inactiveCutoff(s.winback_days, +now))
     .is("next_appt", null)
@@ -38,7 +38,7 @@ export async function GET(req: Request) {
     : { data: [] as { id: string }[] };
   const muted = new Set((off ?? []).map((p) => p.id));
 
-  let sent = 0;
+  let sent = 0, failed = 0;
   for (const c of cands ?? []) {
     if (sent >= MAX_PER_RUN) break;
     if (c.user_id && muted.has(c.user_id)) continue;
@@ -49,8 +49,14 @@ export async function GET(req: Request) {
       .or(`last_winback_sent_at.is.null,last_winback_sent_at.lt.${new Date(c.last_visit).toISOString()}`)
       .select("id");
     if (!claimed?.length) continue;
-    await sendWinbackEmail(c, s.winback_offer);
+    // Si falla el envío, se deshace la marca para reintentarlo en la próxima ejecución diaria.
+    const ok = await sendWinbackEmail(c, s.winback_offer).catch(() => false);
+    if (!ok) {
+      await svc.from("clients").update({ last_winback_sent_at: c.last_winback_sent_at }).eq("id", c.id);
+      failed++;
+      continue;
+    }
     sent++;
   }
-  return Response.json({ sent });
+  return Response.json({ sent, failed });
 }

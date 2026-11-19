@@ -111,10 +111,21 @@ export async function adminSendWinback(f: FormData) {
     if (p && !p.email_reminders) redirect(`/admin/clientes/${cid}?error=baja`);
   }
   const { data: s } = await svc.from("settings").select("winback_offer").single();
+  // Solo se marca como avisado si el proveedor aceptó el email.
+  if (!(await sendWinbackEmail(c, s?.winback_offer ?? ""))) redirect(`/admin/clientes/${cid}?error=envio`);
   await svc.from("clients").update({ last_winback_sent_at: new Date().toISOString() }).eq("id", cid);
-  await sendWinbackEmail(c, s?.winback_offer ?? "");
   revalidatePath(`/admin/clientes/${cid}`);
   redirect(`/admin/clientes/${cid}?aviso=enviado`);
+}
+
+/** Email de muestra al administrador (ADMIN_EMAIL) para ver cómo llega el aviso. No toca a ningún cliente. */
+export async function adminTestWinback() {
+  await guard();
+  const to = process.env.ADMIN_EMAIL;
+  if (!to) redirect("/admin/ajustes?prueba=sin-email");
+  const { data: s } = await supabaseService().from("settings").select("winback_offer").single();
+  const ok = await sendWinbackEmail({ id: "00000000-0000-0000-0000-000000000000", email: to, full_name: "Cliente" }, s?.winback_offer ?? "", to);
+  redirect(`/admin/ajustes?prueba=${ok ? "ok" : "fallo"}`);
 }
 
 export async function adminSaveWinback(f: FormData) {

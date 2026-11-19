@@ -21,7 +21,7 @@ export default async function Baja({ searchParams }: { searchParams: Promise<{ c
       <p className="text-g4 mt-3">
         {ok
           ? "No volverás a recibir avisos promocionales. Seguirás recibiendo la confirmación y el recordatorio de tus citas."
-          : "El enlace ha caducado o está incompleto. Usa el botón del último email que recibiste."}
+          : "El enlace ha caducado o está incompleto. Usa el enlace del último email que recibiste."}
       </p>
       <Link href="/" className="link mt-6">Ir al inicio</Link>
     </main>
