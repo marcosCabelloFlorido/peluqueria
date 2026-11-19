@@ -200,3 +200,7 @@ details > summary::-webkit-details-marker { display: none; }
   .dchip i { display: none; }
 }
 }
+
+/* sin flechas arriba/abajo en campos numéricos */
+input[type="number"] { appearance: textfield; -moz-appearance: textfield; }
+input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }

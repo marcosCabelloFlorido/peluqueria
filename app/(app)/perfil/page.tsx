@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
+import DirtyForm from "@/components/DirtyForm";
 import { signOut, updateProfile, deleteAccount } from "@/app/actions";
 
 export default async function Perfil() {
@@ -23,7 +24,7 @@ export default async function Perfil() {
   return (
     <>
       <h1 className="display text-4xl mb-6">Perfil</h1>
-      <form action={updateProfile} className="flex flex-col gap-3">
+      <DirtyForm action={updateProfile} label="Guardar cambios" buttonClass="btn btn-primary mt-2" className="flex flex-col gap-3">
         <label className="text-sm text-g4" htmlFor="n">Nombre</label>
         <input id="n" className="field" name="full_name" defaultValue={p?.full_name ?? ""} required />
         <label className="text-sm text-g4" htmlFor="e">Email</label>
@@ -34,8 +35,7 @@ export default async function Perfil() {
           <input type="checkbox" name="email_reminders" defaultChecked={p?.email_reminders ?? true} className="size-5 accent-black" />
           Recordatorio de cita por email
         </label>
-        <button className="btn btn-primary mt-2">Guardar cambios</button>
-      </form>
+      </DirtyForm>
 
       {p?.role === "admin" && (
         <Link href="/admin" className="btn btn-secondary w-full mt-6">Panel del peluquero</Link>

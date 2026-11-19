@@ -1,5 +1,6 @@
 import AdminSub from "@/components/AdminSub";
 import { requireAdmin } from "@/lib/adminGuard";
+import DirtyForm from "@/components/DirtyForm";
 import { adminUpdateService } from "@/app/actions";
 
 export default async function Servicios() {
@@ -10,7 +11,7 @@ export default async function Servicios() {
       <ul className="flex flex-col gap-3">
         {(services ?? []).map((s) => (
           <li key={s.id}>
-            <form action={adminUpdateService} className="card p-4 flex flex-col gap-3">
+            <DirtyForm action={adminUpdateService} label="Guardar cambios" className="card p-4 flex flex-col gap-3">
               <input type="hidden" name="id" value={s.id} />
               <div className="flex items-center justify-between gap-3">
                 <span className="font-medium">{s.name}</span>
@@ -29,8 +30,7 @@ export default async function Servicios() {
                   <span className="unit"><input className="field" name="duration" type="number" min="5" step="5" defaultValue={s.duration_min} /><span>min</span></span>
                 </label>
               </div>
-              <button className="btn btn-secondary !min-h-11 text-sm">Guardar</button>
-            </form>
+            </DirtyForm>
           </li>
         ))}
       </ul>
