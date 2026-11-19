@@ -435,11 +435,11 @@ function Success({ d, email, onAgain }: { d: Done; email: string; onAgain: () =>
       </div>
       {!d.loggedIn && !d.moved && (
         <dialog ref={dlg} aria-labelledby="login-ttl" className="m-auto w-[min(92vw,22rem)] rounded-3xl bg-paper text-ink border border-g2 p-6 text-center backdrop:bg-black/40">
-          <h2 id="login-ttl" className="display text-2xl">Crea tu cuenta gratis</h2>
+          <h2 id="login-ttl" className="display text-2xl">¿Quieres iniciar sesión?</h2>
           <p className="text-sm text-g4 mt-2">Solo tu email, sin contraseña. Verás y cancelarás tus citas desde la app, y reservar será más rápido.</p>
           <div className="mt-5 flex flex-col gap-2 items-center">
-            <Link href={`/login?next=${encodeURIComponent(`/citas?claim=${d.id}`)}`} className="btn btn-primary w-full justify-center">Crear cuenta <Arrow /></Link>
-            <Link href={`/login?next=${encodeURIComponent(`/citas?claim=${d.id}`)}`} className="link">Ya tengo cuenta · Entrar</Link>
+            <Link href={`/login?next=${encodeURIComponent(`/citas?claim=${d.id}`)}`} className="btn btn-primary w-full justify-center">Iniciar sesión <Arrow /></Link>
+            <Link href={`/login?next=${encodeURIComponent(`/citas?claim=${d.id}`)}`} className="link !text-ink">Crear cuenta</Link>
             <button className="link" onClick={() => dlg.current?.close()}>Ahora no</button>
           </div>
         </dialog>

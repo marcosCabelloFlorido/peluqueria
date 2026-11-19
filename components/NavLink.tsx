@@ -27,11 +27,11 @@ export default function NavLink({ href, to, label, d, guard }: Props) {
           {inner}
         </button>
         <dialog ref={dlg} aria-labelledby={`login-${to}`} closedby="any" className="m-auto w-[min(92vw,22rem)] rounded-3xl bg-paper text-ink border border-g2 p-6 text-center backdrop:bg-black/40">
-          <h2 id={`login-${to}`} className="display text-2xl">Crea tu cuenta gratis</h2>
+          <h2 id={`login-${to}`} className="display text-2xl">¿Quieres iniciar sesión?</h2>
           <p className="text-sm text-g4 mt-2">Solo tu email, sin contraseña. Verás {to === "/citas" ? "y cancelarás tus citas" : "tu perfil"} desde la app.</p>
           <div className="mt-5 flex flex-col gap-2 items-center">
-            <Link href={href} className="btn btn-primary w-full justify-center">Crear cuenta <Arrow /></Link>
-            <Link href={href} className="link">Ya tengo cuenta · Entrar</Link>
+            <Link href={href} className="btn btn-primary w-full justify-center">Iniciar sesión <Arrow /></Link>
+            <Link href={href} className="link !text-ink">Crear cuenta</Link>
             <button type="button" className="link" onClick={() => dlg.current?.close()}>Ahora no</button>
           </div>
         </dialog>
