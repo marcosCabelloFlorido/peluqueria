@@ -29,7 +29,29 @@ export const verifyApptToken = (id: string, token: string | undefined | null) =>
 export const unsubToken = (clientId: string) => sign(`unsub:${clientId}`);
 export const verifyUnsubToken = (clientId: string, token: string | undefined | null) => verify(`unsub:${clientId}`, token);
 export async function unsubUrl(clientId: string) {
-  return `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/baja?c=${clientId}&t=${await unsubToken(clientId)}`;
+  return `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/baja?${await unsubQuery(clientId)}`;
+}
+/** Query `c=…&t=…` firmada, compartida por la página y la API de baja. */
+export async function unsubQuery(clientId: string) {
+  return `c=${clientId}&t=${await unsubToken(clientId)}`;
+}
+/** Endpoint de baja con un clic (RFC 8058, cabecera List-Unsubscribe). */
+export async function unsubApiUrl(clientId: string) {
+  return `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/api/baja?${await unsubQuery(clientId)}`;
+}
+
+export const TEST_CLIENT_ID = "00000000-0000-0000-0000-000000000000";
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export const isUnsubLinkValid = async (c: string | null | undefined, t: string | null | undefined) =>
+  !!c && UUID_RE.test(c) && (await verifyUnsubToken(c, t));
+
+export type OptOutResult = "ok" | "test" | "invalid";
+/** Re-verifica el token y marca la baja. `ok` solo si una fila existente se actualizó. */
+export async function optOutClient(c: string | null | undefined, t: string | null | undefined): Promise<OptOutResult> {
+  if (!c || !(await isUnsubLinkValid(c, t))) return "invalid";
+  if (c === TEST_CLIENT_ID) return "test";
+  const { data, error } = await supabaseService().from("clients").update({ marketing_opt_out: true }).eq("id", c).select("id");
+  return !error && data && data.length > 0 ? "ok" : "invalid";
 }
 
 export async function apptUrl(id: string) {

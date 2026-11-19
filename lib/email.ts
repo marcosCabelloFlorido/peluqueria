@@ -14,13 +14,13 @@ const btn = (href: string, label: string) =>
   `<a href="${href}" style="display:inline-block;background:#fafafa;color:#000;padding:12px 20px;border-radius:8px;font-weight:500;text-decoration:none">${label}</a>`;
 
 /** Devuelve `true` si el proveedor aceptó el email (o en desarrollo, sin clave). */
-export async function send(to: string | undefined, subject: string, html: string): Promise<boolean> {
+export async function send(to: string | undefined, subject: string, html: string, headers?: Record<string, string>): Promise<boolean> {
   const key = process.env.RESEND_API_KEY;
   if (!to) return false;
   if (!key) { console.log(`[email:dev] ${to} · ${subject}`); return true; }
   try {
     const { error } = await new Resend(key).emails.send({
-      from: process.env.EMAIL_FROM ?? "DouceCreative <onboarding@resend.dev>", to, subject, html,
+      from: process.env.EMAIL_FROM ?? "DouceCreative <onboarding@resend.dev>", to, subject, html, ...(headers ? { headers } : {}),
     });
     if (error) { console.error("[email] error", error); return false; }
     return true;
