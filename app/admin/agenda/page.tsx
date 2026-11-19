@@ -117,7 +117,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
                     ? <a className="btn btn-secondary !min-h-11 text-sm" href={waLink(who(a).phone!)} target="_blank" rel="noopener">Contactar</a>
                     : <span />}
                   <details className="relative">
-                    <summary className="btn btn-primary !min-h-11 text-sm">Confirmar asistencia</summary>
+                    <summary className="btn btn-primary !min-h-11 text-sm">Asistencia</summary>
                     <div className="absolute right-0 bottom-[calc(100%+6px)] z-10 w-48 card p-1 shadow-xl flex flex-col">
                       <form action={async () => { "use server"; await adminSetStatus(a.id, "completed"); }}><button className="w-full text-left px-3 min-h-11 rounded-xl hover:bg-tint text-sm font-medium">Sí, ha venido</button></form>
                       <form action={async () => { "use server"; await adminSetStatus(a.id, "no_show"); }}><button className="w-full text-left px-3 min-h-11 rounded-xl hover:bg-tint text-sm">No vino</button></form>
