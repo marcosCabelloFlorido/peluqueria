@@ -38,7 +38,7 @@ export default async function Perfil() {
       </DirtyForm>
 
       {p?.role === "admin" && (
-        <Link href="/admin" className="btn btn-secondary w-full mt-6">Panel del peluquero</Link>
+        <Link href="/admin" className="btn w-full mt-6 !bg-white !text-[#0b0b0c] border border-[#e7e7e5]">Panel del peluquero</Link>
       )}
 
       <div className="mt-8 flex flex-col items-start gap-1">
