@@ -57,7 +57,7 @@ export function dailySummaryEmail(day: string, appts: DayAppt[]) {
 <td valign="top" style="padding:16px"><div style="font-size:16px;font-weight:600">${esc(a.name)}</div><div style="font-size:14px;line-height:1.5;color:#a1a1aa;margin-top:4px">${esc(a.services)}</div>${a.phone ? `<div style="font-size:14px;margin-top:6px"><a href="tel:${esc(a.phone)}" style="color:#fafafa">${esc(a.phone)}</a></div>` : ""}${a.note ? `<div style="font-size:13px;color:#a1a1aa;margin-top:8px;padding-top:8px;border-top:1px solid #27272a">${esc(a.note)}</div>` : ""}</td>
 <td valign="top" align="right" style="padding:16px 16px 16px 0;font-size:14px;color:#a1a1aa;white-space:nowrap">${euro(a.total_cents)}</td></tr></table></td></tr>`).join("");
 
-  const cta = process.env.NEXT_PUBLIC_SITE_URL ? btn(`${process.env.NEXT_PUBLIC_SITE_URL}/admin`, "Abrir agenda") : "";
+  const cta = process.env.NEXT_PUBLIC_SITE_URL ? btn(`${process.env.NEXT_PUBLIC_SITE_URL}/admin/agenda`, "Abrir agenda") : "";
   return shell(
     `Mañana: ${appts.length} ${appts.length === 1 ? "corte" : "cortes"}`,
     `<p style="font-size:15px;margin:0 0 24px;color:#a1a1aa;text-transform:capitalize">${esc(day)}</p>${stats}<table role="presentation" width="100%" cellspacing="0">${rows}</table><div style="margin-top:12px">${cta}</div>`,

@@ -25,7 +25,7 @@ export default function AdminDate({ value, view, today, counts }: Props) {
   const first = parse(`${month}-01`, "yyyy-MM-dd", new Date());
   const lead = (getDay(first) + 6) % 7;
   const cells = [...Array(lead).fill(null), ...Array.from({ length: getDaysInMonth(first) }, (_, i) => `${month}-${String(i + 1).padStart(2, "0")}`)] as (string | null)[];
-  const go = (d: string) => { setOpen(false); r.push(`/admin?d=${d}${view === "week" ? "&v=week" : ""}`); };
+  const go = (d: string) => { setOpen(false); r.push(`/admin/agenda?d=${d}${view === "week" ? "&v=week" : ""}`); };
   const shift = (n: number) => setMonth(format(addMonths(first, n), "yyyy-MM"));
 
   return (
