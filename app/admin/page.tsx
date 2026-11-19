@@ -38,14 +38,18 @@ export default async function Panel() {
   const today = todayMadrid();
   const { data: cfg } = await sb.from("settings").select("winback_days").single();
   const days = cfg?.winback_days ?? 30;
-  const [{ count: hoy }, { count: servicios }, { count: bloqueos }, { count: clientes }, { count: lapsed }] = await Promise.all([
-    sb.from("appointments").select("id", { count: "exact", head: true }).eq("status", "confirmed")
+  const [{ data: hoyRows }, { count: servicios }, { count: bloqueos }, { count: clientes }, { count: lapsed }] = await Promise.all([
+    sb.from("appointments").select("status")
       .gte("starts_at", localToDate(today, "00:00").toISOString()).lt("starts_at", localToDate(today, "23:59").toISOString()),
     sb.from("services").select("id", { count: "exact", head: true }).eq("active", true),
     sb.from("blocked_slots").select("id", { count: "exact", head: true }),
     sb.from("clients").select("id", { count: "exact", head: true }),
     sb.from("client_stats").select("id", { count: "exact", head: true }).gt("visits", 0).lt("last_visit", inactiveCutoff(days, Date.now())).is("next_appt", null),
   ]);
+
+  const hoyList = (hoyRows ?? []).filter((a) => a.status !== "cancelled");
+  const hoy = hoyList.length;
+  const pendientes = hoyList.filter((a) => a.status === "confirmed").length;
 
   return (
     <main className="mx-auto max-w-md px-5 pt-[calc(1rem+env(safe-area-inset-top))] pb-16">
@@ -55,7 +59,7 @@ export default async function Panel() {
       <h1 className="display text-4xl mb-6">Panel</h1>
 
       <ul className="card overflow-hidden">
-        <Row href="/admin/agenda" icon={I.agenda} title="Agenda" hint={hoy ? `${hoy} ${hoy === 1 ? "cita" : "citas"} hoy` : "Sin citas hoy"} />
+        <Row href="/admin/agenda" icon={I.agenda} title="Agenda" hint={hoy ? `${hoy} ${hoy === 1 ? "cita" : "citas"} hoy${pendientes ? ` · ${pendientes} ${pendientes === 1 ? "pendiente" : "pendientes"}` : ""}` : "Sin citas hoy"} />
       </ul>
 
       <p className="text-xs text-g3 uppercase tracking-wider mt-8 mb-2 px-4">Negocio</p>

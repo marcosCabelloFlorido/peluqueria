@@ -179,7 +179,7 @@ export default async function Facturacion({ searchParams }: { searchParams: Prom
           : <span className="size-11" />}
       </div>
 
-      <details className="mb-4" open={!!sp.cm || undefined}>
+      <details key={`${view}:${p.start}`} className="mb-4" open={!!sp.cm || undefined}>
         <summary className="btn btn-secondary !min-h-11 text-sm w-full list-none cursor-pointer [&::-webkit-details-marker]:hidden">Calendario · elegir un día</summary>
         <Calendar month={cm} selected={p} today={today} revenue={Object.fromEntries(revenueByDay(calRows))} view={view} anchor={anchor} />
       </details>

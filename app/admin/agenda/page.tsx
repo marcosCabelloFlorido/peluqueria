@@ -58,7 +58,10 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
 
   const list = all.filter((a) => dayOf(a) === day);
   const active = list.filter(live);
-  const revenue = active.reduce((s, a) => s + a.total_cents, 0);
+  const sum = (xs: Appt[]) => xs.reduce((s, a) => s + a.total_cents, 0);
+  const booked = list.filter((a) => a.status !== "cancelled").length;
+  const cobrado = sum(list.filter((a) => a.status === "completed"));
+  const previsto = cobrado + sum(list.filter((a) => a.status === "confirmed"));
   const windows = (hours ?? []).filter((h) => h.weekday === dow).map((h) => ({ o: mins(h.opens), c: mins(h.closes) }));
   const openMin = windows.reduce((s, w) => s + (w.c - w.o), 0);
   const bookedMin = active.reduce((s, a) => s + (+new Date(a.ends_at) - +new Date(a.starts_at)) / 60000, 0);
@@ -217,8 +220,8 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
               </div>
             )}
             <div className="card p-4 sm:p-5 grid grid-cols-2 gap-y-4 sm:gap-y-5 gap-x-4">
-              <div><p className="text-sm text-g3">Citas</p><p className="display text-2xl sm:text-3xl">{active.length}</p></div>
-              <div><p className="text-sm text-g3">Ingresos</p><p className="display text-2xl sm:text-3xl">{euro(revenue)}</p></div>
+              <div><p className="text-sm text-g3">Citas</p><p className="display text-2xl sm:text-3xl">{booked}</p></div>
+              <div><p className="text-sm text-g3">Cobrado</p><p className="display text-2xl sm:text-3xl">{euro(cobrado)}</p><p className="text-xs text-g3">de {euro(previsto)} previstos</p></div>
               <div><p className="text-sm text-g3">Ocupación</p><p className="display text-2xl sm:text-3xl">{occupancy}%</p></div>
               <div><p className="text-sm text-g3">Libre</p><p className="display text-2xl sm:text-3xl">{openMin ? hm(freeMin) : "Cerrado"}</p></div>
               <div className="col-span-2 h-1.5 rounded-full bg-tint2 overflow-hidden" role="img" aria-label={`Ocupación ${occupancy}%`}>
