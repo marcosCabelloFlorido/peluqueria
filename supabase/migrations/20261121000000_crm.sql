@@ -22,7 +22,7 @@ create table clients (
 );
 create index clients_user_idx on clients (user_id);
 
-create function clients_touch() returns trigger language plpgsql as $$
+create function clients_touch() returns trigger language plpgsql set search_path = public as $$
 begin new.updated_at := now(); return new; end $$;
 create trigger clients_touch before update on clients
   for each row execute function clients_touch();
