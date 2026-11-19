@@ -7,7 +7,6 @@ import { localToDate, todayMadrid, fmt, euro, TZ } from "@/lib/time";
 import { adminSetStatus } from "@/app/actions";
 import { Back, Next } from "@/components/Icons";
 import AdminDate from "@/components/AdminDate";
-import ThemeToggle from "@/components/ThemeToggle";
 
 const STATUS: Record<string, string> = { confirmed: "Confirmada", completed: "Completada", no_show: "No vino", cancelled: "Cancelada" };
 const isDay = (s?: string) => !!s && /^\d{4}-\d{2}-\d{2}$/.test(s);
@@ -165,7 +164,6 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
         <Link href="/admin" className="link"><Back />Panel</Link>
         <span className="display text-xl">DouceCreative</span>
         <div className="flex items-center gap-2">
-          <ThemeToggle />
         </div>
       </header>
 

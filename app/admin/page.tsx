@@ -2,7 +2,6 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/adminGuard";
 import { todayMadrid, localToDate } from "@/lib/time";
 import { Back, Next } from "@/components/Icons";
-import ThemeToggle from "@/components/ThemeToggle";
 
 const I = {
   agenda: "M8 2v4M16 2v4M3 9h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z",
@@ -42,9 +41,8 @@ export default async function Panel() {
 
   return (
     <main className="mx-auto max-w-md px-5 pt-[calc(1rem+env(safe-area-inset-top))] pb-16">
-      <header className="flex items-center justify-between mb-6">
+      <header className="mb-6">
         <Link href="/perfil" className="link"><Back />Perfil</Link>
-        <ThemeToggle />
       </header>
       <h1 className="display text-4xl mb-6">Panel</h1>
 
