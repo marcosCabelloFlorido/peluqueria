@@ -26,8 +26,8 @@ export default function NavLink({ href, to, label, d, guard }: Props) {
         <button type="button" className={cls} onClick={() => dlg.current?.showModal()} aria-haspopup="dialog">
           {inner}
         </button>
-        <dialog ref={dlg} aria-labelledby={`login-${to}`} closedby="any" className="m-auto w-[min(92vw,22rem)] overflow-visible rounded-3xl bg-paper text-ink border border-g2 p-6 text-center backdrop:bg-black/40">
-          <button type="button" aria-label="Cerrar" onClick={() => dlg.current?.close()} className="absolute -top-14 right-0 size-11 grid place-items-center rounded-full bg-black text-white border border-white/20 cursor-pointer"><Close /></button>
+        <dialog ref={dlg} aria-labelledby={`login-${to}`} closedby="any" className="m-auto w-[min(92vw,22rem)] rounded-3xl bg-paper text-ink border border-g2 p-6 text-center backdrop:bg-black/40">
+          <button type="button" aria-label="Cerrar" onClick={() => dlg.current?.close()} className="absolute top-2 right-2 size-11 grid place-items-center rounded-full text-g4 hover:text-ink cursor-pointer"><Close /></button>
           <h2 id={`login-${to}`} className="display text-2xl">¿Quieres iniciar sesión?</h2>
           <p className="text-sm text-g4 mt-2">Solo tu email, sin contraseña. Verás {to === "/citas" ? "y cancelarás tus citas" : "tu perfil"} desde la app.</p>
           <div className="mt-5 flex flex-col gap-2 items-center">
