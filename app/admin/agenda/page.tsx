@@ -7,6 +7,7 @@ import { localToDate, todayMadrid, fmt, euro, TZ } from "@/lib/time";
 import { adminSetStatus } from "@/app/actions";
 import { Back, Next } from "@/components/Icons";
 import AdminDate from "@/components/AdminDate";
+import AttendanceMenu from "@/components/AttendanceMenu";
 
 const isDay = (s?: string) => !!s && /^\d{4}-\d{2}-\d{2}$/.test(s);
 const shift = (day: string, n: number) => formatInTimeZone(addDays(new Date(`${day}T12:00:00Z`), n), TZ, "yyyy-MM-dd");
@@ -112,19 +113,11 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
               {isNow && <p className="text-sm mt-2 font-medium">En curso</p>}
               {a.note && <p className="text-sm mt-3 text-g4">“{a.note}”</p>}
               {open && !over && (
-                <div className="grid grid-cols-2 gap-2 mt-4">
-                  {who(a).phone
-                    ? <a className="btn btn-secondary !min-h-11 text-sm" href={waLink(who(a).phone!)} target="_blank" rel="noopener">Contactar</a>
-                    : <span />}
-                  <details className="relative">
-                    <summary className="btn btn-primary !min-h-11 text-sm">Asistencia</summary>
-                    <div className="absolute right-0 bottom-[calc(100%+6px)] z-10 w-48 card p-1 shadow-xl flex flex-col">
-                      <form action={async () => { "use server"; await adminSetStatus(a.id, "completed"); }}><button className="w-full text-left px-3 min-h-11 rounded-xl hover:bg-tint text-sm font-medium">Sí, ha venido</button></form>
-                      <form action={async () => { "use server"; await adminSetStatus(a.id, "no_show"); }}><button className="w-full text-left px-3 min-h-11 rounded-xl hover:bg-tint text-sm">No vino</button></form>
-                      <form action={async () => { "use server"; await adminSetStatus(a.id, "cancelled"); }}><button className="w-full text-left px-3 min-h-11 rounded-xl hover:bg-tint text-sm text-g4">Cancelar cita</button></form>
-                    </div>
-                  </details>
-                </div>
+                <AttendanceMenu contactHref={who(a).phone ? waLink(who(a).phone!) : undefined}>
+                  <form action={async () => { "use server"; await adminSetStatus(a.id, "completed"); }}><button className="w-full text-left px-3 min-h-11 rounded-xl hover:bg-tint text-sm font-medium">Sí, ha venido</button></form>
+                  <form action={async () => { "use server"; await adminSetStatus(a.id, "no_show"); }}><button className="w-full text-left px-3 min-h-11 rounded-xl hover:bg-tint text-sm">No vino</button></form>
+                  <form action={async () => { "use server"; await adminSetStatus(a.id, "cancelled"); }}><button className="w-full text-left px-3 min-h-11 rounded-xl hover:bg-tint text-sm text-g4">Cancelar cita</button></form>
+                </AttendanceMenu>
               )}
             </div>
             {over && (
