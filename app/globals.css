@@ -211,3 +211,9 @@ html:has(.admin-light) {
   --tint: rgb(11 11 12 / .045); --tint-2: rgb(11 11 12 / .08);
   color-scheme: light;
 }
+
+/* tic de confirmación: se dibuja al aparecer */
+.draw { stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw .6s var(--ease) forwards; }
+.draw-late { animation-delay: .45s; animation-duration: .4s; }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+@media (prefers-reduced-motion: reduce) { .draw { animation: none; stroke-dashoffset: 0; } }

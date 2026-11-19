@@ -117,9 +117,9 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
                     ? <a className="btn btn-secondary !min-h-11 text-sm" href={waLink(who(a).phone!)} target="_blank" rel="noopener">Contactar</a>
                     : <span />}
                   <details className="relative">
-                    <summary className="btn btn-primary !min-h-11 text-sm">¿Vino?</summary>
+                    <summary className="btn btn-primary !min-h-11 text-sm">Confirmar asistencia</summary>
                     <div className="absolute right-0 bottom-[calc(100%+6px)] z-10 w-48 card p-1 shadow-xl flex flex-col">
-                      <form action={async () => { "use server"; await adminSetStatus(a.id, "completed"); }}><button className="w-full text-left px-3 min-h-11 rounded-xl hover:bg-tint text-sm font-medium">Sí, completada</button></form>
+                      <form action={async () => { "use server"; await adminSetStatus(a.id, "completed"); }}><button className="w-full text-left px-3 min-h-11 rounded-xl hover:bg-tint text-sm font-medium">Sí, ha venido</button></form>
                       <form action={async () => { "use server"; await adminSetStatus(a.id, "no_show"); }}><button className="w-full text-left px-3 min-h-11 rounded-xl hover:bg-tint text-sm">No vino</button></form>
                       <form action={async () => { "use server"; await adminSetStatus(a.id, "cancelled"); }}><button className="w-full text-left px-3 min-h-11 rounded-xl hover:bg-tint text-sm text-g4">Cancelar cita</button></form>
                     </div>
@@ -133,12 +133,18 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
                   <div className="flex flex-col items-center gap-3 w-full">
                     <p className="font-medium">Pendiente de confirmar asistencia</p>
                     <div className="grid grid-cols-2 gap-2 w-full">
-                      <form action={async () => { "use server"; await adminSetStatus(a.id, "completed"); }}><button className="btn btn-primary !min-h-11 text-sm w-full">Sí vino</button></form>
+                      <form action={async () => { "use server"; await adminSetStatus(a.id, "completed"); }}><button className="btn btn-primary !min-h-11 text-sm w-full">Sí ha venido</button></form>
                       <form action={async () => { "use server"; await adminSetStatus(a.id, "no_show"); }}><button className="btn btn-secondary !min-h-11 text-sm w-full">No vino</button></form>
                     </div>
                   </div>
                 ) : (
                   <div className="flex flex-col items-center gap-1">
+                    {a.status === "completed" && (
+                      <svg width="48" height="48" viewBox="0 0 88 88" aria-hidden="true" className="mb-1">
+                        <circle cx="44" cy="44" r="40" fill="none" stroke="currentColor" strokeWidth="3" pathLength="1" className="draw" />
+                        <path d="M27 45l12 12 22-26" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" pathLength="1" className="draw draw-late" />
+                      </svg>
+                    )}
                     <p className="display text-2xl">{a.status === "completed" ? "Ya se ha pelado" : a.status === "no_show" ? "No vino" : "Cancelada"}</p>
                     {(a.status === "completed" || a.status === "no_show") && <form action={async () => { "use server"; await adminSetStatus(a.id, "confirmed"); }}><button className="link text-sm !min-h-9">Reabrir</button></form>}
                   </div>
