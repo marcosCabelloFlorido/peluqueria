@@ -24,7 +24,7 @@ export default function ClientNotes({ id, initial }: { id: string; initial: stri
         placeholder="Forma de la cabeza, estructura del pelo, remolinos, preferencias… Ej.: remolino en coronilla, degradado bajo con 1.5, tijera arriba 4 cm"
         onChange={(e) => { setValue(e.target.value); setMsg(""); }} />
       <div className="flex items-center gap-3 mt-2 min-h-11">
-        <button type="button" className="btn btn-secondary !min-h-11 text-sm" disabled={!dirty || pending} onClick={save}>{pending ? "Guardando…" : "Guardar detalles"}</button>
+        {(dirty || pending) && <button type="button" className="btn btn-secondary !min-h-11 text-sm" disabled={pending} onClick={save}>{pending ? "Guardando…" : "Guardar detalles"}</button>}
         <p role="status" className="text-sm text-g4">
           {msg === "ok" && !dirty ? "Guardado" : msg && msg !== "ok" ? msg : dirty ? "Cambios sin guardar" : ""}
         </p>
