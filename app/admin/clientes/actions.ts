@@ -26,15 +26,31 @@ const read = (f: FormData) => fields.safeParse({
   full_name: f.get("full_name") ?? "", email: f.get("email") ?? "", phone: f.get("phone") ?? "", birthday: f.get("birthday") ?? "",
 });
 
-export async function adminCreateClient(f: FormData) {
+export type NewClientState = { error?: string; field?: "full_name" | "email" | "phone" | "birthday"; values?: Record<string, string> };
+
+/** Alta manual. Con error devuelve los valores escritos para no perderlos en el formulario. */
+export async function adminCreateClient(_: NewClientState, f: FormData): Promise<NewClientState> {
   const sb = await guard();
+  const values = Object.fromEntries(["full_name", "email", "phone", "birthday"].map((k) => [k, String(f.get(k) ?? "")]));
   const p = read(f);
-  if (!p.success || p.data.full_name.length < 2) redirect("/admin/clientes/nuevo?error=invalido");
+  if (!p.success || p.data.full_name.length < 2) {
+    const bad = p.success ? "full_name" : (p.error.issues[0]?.path[0] as NewClientState["field"]);
+    const msg: Record<string, string> = {
+      full_name: "Escribe el nombre (mínimo 2 letras).",
+      email: "El email no es válido. Revisa que esté bien escrito.",
+      phone: "El teléfono es demasiado largo.",
+      birthday: "La fecha de cumpleaños no es válida.",
+    };
+    return { error: msg[bad ?? "full_name"] ?? msg.full_name, field: bad ?? "full_name", values };
+  }
   const { data, error } = await sb.from("clients")
     .insert({ full_name: p.data.full_name, email: p.data.email, phone: p.data.phone || null, birthday: p.data.birthday || null })
     .select("id").single();
-  if (error?.code === "23505") redirect("/admin/clientes/nuevo?error=duplicado");
-  if (error || !data) redirect("/admin/clientes/nuevo?error=fallo");
+  if (error?.code === "23505") {
+    const { data: dup } = await sb.from("clients").select("id,full_name").eq("email", p.data.email).single();
+    return { error: `Ya existe un cliente con ese email${dup?.full_name ? ` (${dup.full_name})` : ""}.`, field: "email", values };
+  }
+  if (error || !data) return { error: "No se pudo crear. Inténtalo de nuevo.", values };
   revalidatePath("/admin", "layout");
   redirect(`/admin/clientes/${data.id}`);
 }
