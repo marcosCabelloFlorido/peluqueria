@@ -8,7 +8,7 @@ import { book, fetchMonth, fetchSlots, reschedule } from "@/app/actions";
 import { euro, todayMadrid } from "@/lib/time";
 import { whatsappUrl } from "@/lib/calendar";
 import type { DayInfo } from "@/lib/availability";
-import { Alert, Arrow, Back, Next, WhatsApp } from "./Icons";
+import { Alert, Arrow, Back, Close, Next, WhatsApp } from "./Icons";
 
 type Service = { id: string; slug: string; name: string; price_cents: number; duration_min: number; exclusive_group: string | null };
 type Saved = { ids: string[]; day: string | null; time: string | null; step: 1 | 2 | 3; note: string };
@@ -434,14 +434,13 @@ function Success({ d, email, onAgain }: { d: Done; email: string; onAgain: () =>
         <a className="link" target="_blank" rel="noopener" href={whatsappUrl(`Hola, tengo cita el ${label} a las ${d.time}.`)}><WhatsApp />&nbsp;Escribir por WhatsApp</a>
       </div>
       {!d.loggedIn && !d.moved && (
-        <dialog ref={dlg} aria-labelledby="login-ttl" className="m-auto w-[min(92vw,22rem)] rounded-3xl bg-paper text-ink border border-g2 p-6 text-center backdrop:bg-black/40">
+        <dialog ref={dlg} aria-labelledby="login-ttl" className="m-auto w-[min(92vw,22rem)] overflow-visible rounded-3xl bg-paper text-ink border border-g2 p-6 text-center backdrop:bg-black/40">
+          <button type="button" aria-label="Cerrar" onClick={() => dlg.current?.close()} className="absolute -top-14 right-0 size-11 grid place-items-center rounded-full bg-black text-white border border-white/20 cursor-pointer"><Close /></button>
           <h2 id="login-ttl" className="display text-2xl">¿Quieres iniciar sesión?</h2>
           <p className="text-sm text-g4 mt-2">Solo tu email, sin contraseña. Verás y cancelarás tus citas desde la app, y reservar será más rápido.</p>
           <div className="mt-5 flex flex-col gap-2 items-center">
             <Link href={`/login?next=${encodeURIComponent(`/citas?claim=${d.id}`)}`} className="btn btn-primary w-full justify-center">Iniciar sesión <Arrow /></Link>
-            <Link href={`/login?next=${encodeURIComponent(`/citas?claim=${d.id}`)}`} className="link !text-ink">Crear cuenta</Link>
-            <button className="link" onClick={() => dlg.current?.close()}>Ahora no</button>
-          </div>
+            <Link href={`/login?next=${encodeURIComponent(`/citas?claim=${d.id}`)}`} className="link !text-ink">Crear cuenta</Link>          </div>
         </dialog>
       )}
     </div>
