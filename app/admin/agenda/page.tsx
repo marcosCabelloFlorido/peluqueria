@@ -8,7 +8,6 @@ import { adminSetStatus } from "@/app/actions";
 import { Back, Next } from "@/components/Icons";
 import AdminDate from "@/components/AdminDate";
 
-const STATUS: Record<string, string> = { confirmed: "Confirmada", completed: "Completada", no_show: "No vino", cancelled: "Cancelada" };
 const isDay = (s?: string) => !!s && /^\d{4}-\d{2}-\d{2}$/.test(s);
 const shift = (day: string, n: number) => formatInTimeZone(addDays(new Date(`${day}T12:00:00Z`), n), TZ, "yyyy-MM-dd");
 const mins = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
@@ -19,7 +18,6 @@ const waLink = (phone: string) => {
   return `https://wa.me/${n.length === 9 ? "34" + n : n}`;
 };
 const who = (a: Appt) => ({ name: a.contact_name || a.profiles?.full_name || "Cliente", phone: a.contact_phone || a.profiles?.phone || null });
-const clientKey = (a: Appt) => a.user_id ?? (a.contact_email ? `e:${a.contact_email}` : a.id);
 const hm = (m: number) => (m >= 60 ? `${Math.floor(m / 60)} h${m % 60 ? ` ${m % 60} min` : ""}` : `${m} min`);
 
 type Appt = {
@@ -68,17 +66,6 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
   const nowMs = Date.now();
   const next = day === today ? list.find((a) => a.status === "confirmed" && +new Date(a.ends_at) > nowMs) : list.find((a) => a.status === "confirmed");
 
-  // visitas previas por cliente → "nueva" / "3ª visita"
-  const visits = new Map<string, number>();
-  const uids = [...new Set(list.map((a) => a.user_id).filter((x): x is string => !!x))];
-  const mails = [...new Set(list.filter((a) => !a.user_id && a.contact_email).map((a) => a.contact_email!))];
-  const alive = ["confirmed", "completed"];
-  const [byUser, byMail] = await Promise.all([
-    uids.length ? sb.from("appointments").select("user_id").in("user_id", uids).in("status", alive) : null,
-    mails.length ? sb.from("appointments").select("contact_email").is("user_id", null).in("contact_email", mails).in("status", alive) : null,
-  ]);
-  for (const r of byUser?.data ?? []) visits.set(r.user_id!, (visits.get(r.user_id!) ?? 0) + 1);
-  for (const r of byMail?.data ?? []) visits.set(`e:${r.contact_email}`, (visits.get(`e:${r.contact_email}`) ?? 0) + 1);
 
   const q = (d: string, v = view) => `/admin/agenda?d=${d}${v === "week" ? "&v=week" : ""}`;
   const step = view === "week" ? 7 : 1;
@@ -91,7 +78,8 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
   const card = (a: Appt, prev?: Appt) => {
     const svc = a.appointment_services.map((s) => s.services.name).join(" + ");
     const open = a.status === "confirmed";
-    const n = visits.get(clientKey(a)) ?? 0;
+    const pending = open && +new Date(a.ends_at) <= nowMs;
+    const over = !open || pending;
     const isNow = day === today && open && +new Date(a.starts_at) <= nowMs && +new Date(a.ends_at) > nowMs;
     const gap = prev ? Math.round((+new Date(a.starts_at) - +new Date(prev.ends_at)) / 60000) : 0;
     const gapOk = prev && gap >= 15 && windows.some((w) => {
@@ -109,45 +97,53 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
         <div className={`rail py-2 ${isNow ? "now" : ""}`}>
           <span className="rail-time mono">{fmt(a.starts_at, "HH:mm")}</span>
           <span className="rail-dot" />
-          <div className={`card p-4 ${open ? "" : "bg-g1 text-g4"} ${isNow ? "border-ink" : ""}`}>
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className={`font-medium truncate ${open ? "" : "line-through decoration-g3"}`}>{who(a).name}</p>
-                <p className="text-sm text-g4">{svc}</p>
+          <div className={`card relative overflow-hidden ${isNow ? "border-ink" : ""}`}>
+            <div className={`p-4 ${over ? "blur-[6px] opacity-60 select-none pointer-events-none min-h-36" : ""}`} aria-hidden={over || undefined} inert={over || undefined}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="font-medium truncate">{who(a).name}</p>
+                  <p className="text-sm text-g4">{svc}</p>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="font-medium">{euro(a.total_cents)}</p>
+                  <p className="text-xs text-g3 mono">{fmt(a.starts_at, "HH:mm")}–{fmt(a.ends_at, "HH:mm")}</p>
+                </div>
               </div>
-              <div className="text-right shrink-0">
-                <p className="font-medium">{euro(a.total_cents)}</p>
-                <p className="text-xs text-g3 mono">{fmt(a.starts_at, "HH:mm")}–{fmt(a.ends_at, "HH:mm")}</p>
-              </div>
-            </div>
-            <div className="mt-3 flex flex-wrap items-center gap-1.5">
-              <span className={`tag ${isNow ? "tag-on" : ""}`}>{isNow ? "En curso" : STATUS[a.status] ?? a.status}</span>
-              {n === 1 && open && <span className="tag">Cliente nuevo</span>}
-              {n > 1 && <span className="tag">{n}ª visita</span>}
-              {who(a).phone && (
-                <>
-                  <a className="chip" href={`tel:${who(a).phone}`}>Llamar</a>
-                  <a className="chip" href={waLink(who(a).phone!)} target="_blank" rel="noopener">WhatsApp</a>
-                </>
+              {isNow && <p className="text-sm mt-2 font-medium">En curso</p>}
+              {a.note && <p className="text-sm mt-3 text-g4">“{a.note}”</p>}
+              {open && !over && (
+                <div className="grid grid-cols-2 gap-2 mt-4">
+                  {who(a).phone
+                    ? <a className="btn btn-secondary !min-h-11 text-sm" href={waLink(who(a).phone!)} target="_blank" rel="noopener">Contactar</a>
+                    : <span />}
+                  <details className="relative">
+                    <summary className="btn btn-primary !min-h-11 text-sm">¿Vino?</summary>
+                    <div className="absolute right-0 bottom-[calc(100%+6px)] z-10 w-48 card p-1 shadow-xl flex flex-col">
+                      <form action={async () => { "use server"; await adminSetStatus(a.id, "completed"); }}><button className="w-full text-left px-3 min-h-11 rounded-xl hover:bg-tint text-sm font-medium">Sí, completada</button></form>
+                      <form action={async () => { "use server"; await adminSetStatus(a.id, "no_show"); }}><button className="w-full text-left px-3 min-h-11 rounded-xl hover:bg-tint text-sm">No vino</button></form>
+                      <form action={async () => { "use server"; await adminSetStatus(a.id, "cancelled"); }}><button className="w-full text-left px-3 min-h-11 rounded-xl hover:bg-tint text-sm text-g4">Cancelar cita</button></form>
+                    </div>
+                  </details>
+                </div>
               )}
             </div>
-            {a.note && <p className="text-sm mt-3 text-g4 bg-tint rounded-xl px-3 py-2">“{a.note}”</p>}
-            {open ? (
-              <div className="grid grid-cols-2 sm:flex items-center gap-2 mt-3">
-                <form action={async () => { "use server"; await adminSetStatus(a.id, "completed"); }} className="col-span-2 sm:flex-1">
-                  <button className="btn btn-primary !min-h-11 text-sm">Completada</button>
-                </form>
-                <form action={async () => { "use server"; await adminSetStatus(a.id, "no_show"); }}>
-                  <button className="btn btn-secondary !min-h-11 !px-4 text-sm w-full">No vino</button>
-                </form>
-                <form action={async () => { "use server"; await adminSetStatus(a.id, "cancelled"); }}>
-                  <button className="btn btn-secondary !min-h-11 !px-4 text-sm w-full">Cancelar</button>
-                </form>
+            {over && (
+              <div className="absolute inset-0 grid place-items-center p-4 text-center">
+                {pending ? (
+                  <div className="flex flex-col items-center gap-3 w-full">
+                    <p className="font-medium">Pendiente de confirmar asistencia</p>
+                    <div className="grid grid-cols-2 gap-2 w-full">
+                      <form action={async () => { "use server"; await adminSetStatus(a.id, "completed"); }}><button className="btn btn-primary !min-h-11 text-sm w-full">Sí vino</button></form>
+                      <form action={async () => { "use server"; await adminSetStatus(a.id, "no_show"); }}><button className="btn btn-secondary !min-h-11 text-sm w-full">No vino</button></form>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-1">
+                    <p className="display text-2xl">{a.status === "completed" ? "Ya se ha pelado" : a.status === "no_show" ? "No vino" : "Cancelada"}</p>
+                    {(a.status === "completed" || a.status === "no_show") && <form action={async () => { "use server"; await adminSetStatus(a.id, "confirmed"); }}><button className="link text-sm !min-h-9">Reabrir</button></form>}
+                  </div>
+                )}
               </div>
-            ) : (a.status === "completed" || a.status === "no_show") && (
-              <form action={async () => { "use server"; await adminSetStatus(a.id, "confirmed"); }} className="mt-2">
-                <button className="link text-sm !min-h-9">Reabrir</button>
-              </form>
             )}
           </div>
         </div>

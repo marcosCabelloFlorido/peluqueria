@@ -7,6 +7,7 @@ const I = {
   agenda: "M8 2v4M16 2v4M3 9h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z",
   servicios: "M6 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM6 15a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM20 4 8.1 15.9M14.5 14.5 20 20M8.1 8.1 12 12",
   horario: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM12 7v5l3 2",
+  facturacion: "M3 6h18v12H3zM3 10h18M7 15h3",
   bloqueos: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM5.6 5.6l12.8 12.8",
 };
 
@@ -52,6 +53,7 @@ export default async function Panel() {
 
       <p className="text-xs text-g3 uppercase tracking-wider mt-8 mb-2 px-4">Negocio</p>
       <ul className="card overflow-hidden">
+        <Row href="/admin/facturacion" icon={I.facturacion} title="Facturación" hint="Ingresos y registro de pagos" />
         <Row href="/admin/servicios" icon={I.servicios} title="Servicios y precios" hint={`${servicios ?? 0} activos`} />
         <Row href="/admin/horario" icon={I.horario} title="Horario semanal" hint="Franjas para reservar" />
         <Row href="/admin/bloqueos" icon={I.bloqueos} title="Bloquear horas o días" hint={bloqueos ? `${bloqueos} bloqueos` : "Vacaciones, descansos…"} />
