@@ -64,3 +64,16 @@ export function dailySummaryEmail(day: string, appts: DayAppt[]) {
     560,
   );
 }
+
+/** Reactivación de clientes que llevan tiempo sin venir. `offerText` y `name` son texto libre: se escapan. */
+export function winbackEmail(name: string, offerText: string, bookUrl: string, unsubscribeUrl: string) {
+  const first = name.trim().split(/\s+/)[0];
+  const offer = offerText.trim()
+    ? `<div style="margin:0 0 24px;padding:16px 20px;border:1px solid #27272a;border-radius:12px;background:#111"><div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#71717a;margin-bottom:6px">Para ti</div><div style="font-size:18px;font-weight:600;letter-spacing:-.02em">${esc(offerText.trim())}</div></div>`
+    : "";
+  return shell(
+    "Te echamos de menos",
+    `<p style="font-size:16px;line-height:1.6;margin:0 0 24px;color:#a1a1aa">${first ? `Hola ${esc(first)}, hace` : "Hace"} tiempo que no te pasas por DouceCreative. Vuelve a cortarte: te esperamos con tu sitio listo.</p>${offer}${btn(bookUrl, "Reservar mi cita")}
+<p style="margin:32px 0 0;font-size:12px;line-height:1.6;color:#71717a">Recibes este email porque has reservado con nosotros. <a href="${unsubscribeUrl}" style="color:#a1a1aa">No quiero recibir más avisos</a>.</p>`,
+  );
+}

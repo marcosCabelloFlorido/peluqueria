@@ -10,5 +10,7 @@ export default {
     ctx.waitUntil(fetch(`${env.SITE_URL}/api/cron/reminders`, { headers }));
     // Resumen diario al admin: el endpoint solo envía a las 21:00 (Madrid).
     ctx.waitUntil(fetch(`${env.SITE_URL}/api/cron/daily-summary`, { headers }));
+    // Reactivación de clientes inactivos: el endpoint solo envía a las 11:00 (Madrid).
+    ctx.waitUntil(fetch(`${env.SITE_URL}/api/cron/winback`, { headers }));
   },
 };

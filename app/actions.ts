@@ -92,7 +92,11 @@ export async function claimAppointment(id: string) {
   const sb = await supabaseServer();
   const { data: { user } } = await sb.auth.getUser();
   if (!user || !z.string().uuid().safeParse(id).success) return;
-  await supabaseService().from("appointments").update({ user_id: user.id }).eq("id", id).is("user_id", null);
+  const svc = supabaseService();
+  const { data } = await svc.from("appointments").update({ user_id: user.id }).eq("id", id).is("user_id", null).select("client_id");
+  // El cliente (CRM) también queda vinculado a la cuenta.
+  const cid = data?.[0]?.client_id;
+  if (cid) await svc.from("clients").update({ user_id: user.id }).eq("id", cid).is("user_id", null);
 }
 
 export async function cancel(id: string, token?: string) {

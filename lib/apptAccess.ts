@@ -8,18 +8,28 @@ const secret = () =>
 const b64url = (buf: ArrayBuffer) =>
   btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 
-export async function apptToken(id: string) {
+async function sign(message: string) {
   const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret()), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
-  return b64url(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(`appt:${id}`))).slice(0, 32);
+  return b64url(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(message))).slice(0, 32);
 }
 
-export async function verifyApptToken(id: string, token: string | undefined | null) {
+async function verify(message: string, token: string | undefined | null) {
   if (!token || !secret()) return false;
-  const good = await apptToken(id);
+  const good = await sign(message);
   if (good.length !== token.length) return false;
   let diff = 0;
   for (let i = 0; i < good.length; i++) diff |= good.charCodeAt(i) ^ token.charCodeAt(i);
   return diff === 0;
+}
+
+export const apptToken = (id: string) => sign(`appt:${id}`);
+export const verifyApptToken = (id: string, token: string | undefined | null) => verify(`appt:${id}`, token);
+
+// Baja de emails promocionales de un cliente: mismo secreto, otro ámbito (un token de cita no sirve aquí).
+export const unsubToken = (clientId: string) => sign(`unsub:${clientId}`);
+export const verifyUnsubToken = (clientId: string, token: string | undefined | null) => verify(`unsub:${clientId}`, token);
+export async function unsubUrl(clientId: string) {
+  return `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/baja?c=${clientId}&t=${await unsubToken(clientId)}`;
 }
 
 export async function apptUrl(id: string) {

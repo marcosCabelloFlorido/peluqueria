@@ -22,7 +22,7 @@ const who = (a: Appt) => ({ name: a.contact_name || a.profiles?.full_name || "Cl
 const hm = (m: number) => (m >= 60 ? `${Math.floor(m / 60)} h${m % 60 ? ` ${m % 60} min` : ""}` : `${m} min`);
 
 type Appt = {
-  id: string; user_id: string | null; contact_name: string | null; contact_phone: string | null; contact_email: string | null; starts_at: string; ends_at: string; total_cents: number; status: string; note: string | null;
+  id: string; user_id: string | null; client_id: string | null; contact_name: string | null; contact_phone: string | null; contact_email: string | null; starts_at: string; ends_at: string; total_cents: number; status: string; note: string | null;
   profiles: { full_name: string; phone: string | null } | null;
   appointment_services: { services: { name: string } }[];
 };
@@ -46,7 +46,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
   const rangeTo = localToDate(shift(day, 21), "00:00");
   const [{ data: raw }, { data: hours }] = await Promise.all([
     sb.from("appointments")
-      .select("id,user_id,contact_name,contact_phone,contact_email,starts_at,ends_at,total_cents,status,note,profiles(full_name,phone),appointment_services(services(name))")
+      .select("id,user_id,client_id,contact_name,contact_phone,contact_email,starts_at,ends_at,total_cents,status,note,profiles(full_name,phone),appointment_services(services(name))")
       .gte("starts_at", rangeFrom.toISOString()).lt("starts_at", rangeTo.toISOString()).order("starts_at"),
     sb.from("business_hours").select("weekday,opens,closes").order("opens"),
   ]);
@@ -102,7 +102,9 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
             <div className={`p-4 ${over ? "blur-[6px] opacity-60 select-none pointer-events-none min-h-36" : ""}`} aria-hidden={over || undefined} inert={over || undefined}>
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="font-medium truncate">{who(a).name}</p>
+                  {a.client_id
+                    ? <Link href={`/admin/clientes/${a.client_id}`} className="block font-medium truncate hover:underline underline-offset-4">{who(a).name}</Link>
+                    : <p className="font-medium truncate">{who(a).name}</p>}
                   <p className="text-sm text-g4">{svc}</p>
                 </div>
                 <div className="text-right shrink-0">

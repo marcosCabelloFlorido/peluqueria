@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/adminGuard";
 import { todayMadrid, localToDate } from "@/lib/time";
 import { Back, Next } from "@/components/Icons";
+import { inactiveCutoff } from "@/lib/crm";
 
 const I = {
   agenda: "M8 2v4M16 2v4M3 9h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z",
@@ -9,6 +10,8 @@ const I = {
   horario: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM12 7v5l3 2",
   facturacion: "M3 6h18v12H3zM3 10h18M7 15h3",
   bloqueos: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM5.6 5.6l12.8 12.8",
+  clientes: "M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM2 21v-1a6 6 0 0 1 6-6h2a6 6 0 0 1 6 6v1M17 3.2a4 4 0 0 1 0 7.6M22 21v-1a6 6 0 0 0-4-5.6",
+  avisos: "M4 4h16v16H4zM4 7l8 6 8-6",
 };
 
 function Row({ href, icon, title, hint }: { href: string; icon: string; title: string; hint?: string }) {
@@ -33,11 +36,15 @@ function Row({ href, icon, title, hint }: { href: string; icon: string; title: s
 export default async function Panel() {
   const sb = await requireAdmin("/admin");
   const today = todayMadrid();
-  const [{ count: hoy }, { count: servicios }, { count: bloqueos }] = await Promise.all([
+  const { data: cfg } = await sb.from("settings").select("winback_days").single();
+  const days = cfg?.winback_days ?? 30;
+  const [{ count: hoy }, { count: servicios }, { count: bloqueos }, { count: clientes }, { count: lapsed }] = await Promise.all([
     sb.from("appointments").select("id", { count: "exact", head: true }).eq("status", "confirmed")
       .gte("starts_at", localToDate(today, "00:00").toISOString()).lt("starts_at", localToDate(today, "23:59").toISOString()),
     sb.from("services").select("id", { count: "exact", head: true }).eq("active", true),
     sb.from("blocked_slots").select("id", { count: "exact", head: true }),
+    sb.from("clients").select("id", { count: "exact", head: true }),
+    sb.from("client_stats").select("id", { count: "exact", head: true }).gt("visits", 0).lt("last_visit", inactiveCutoff(days, Date.now())).is("next_appt", null),
   ]);
 
   return (
@@ -53,9 +60,11 @@ export default async function Panel() {
 
       <p className="text-xs text-g3 uppercase tracking-wider mt-8 mb-2 px-4">Negocio</p>
       <ul className="card overflow-hidden">
-        <Row href="/admin/facturacion" icon={I.facturacion} title="Facturación" hint="Ingresos y registro de pagos" />
+        <Row href="/admin/clientes" icon={I.clientes} title="Clientes" hint={`${clientes ?? 0} ${clientes === 1 ? "cliente" : "clientes"}${lapsed ? ` · ${lapsed} sin venir +${days} días` : ""}`} />
+        <Row href="/admin/facturacion" icon={I.facturacion} title="Facturación" hint="Ingresos, comparativas y pagos" />
         <Row href="/admin/servicios" icon={I.servicios} title="Servicios y precios" hint={`${servicios ?? 0} activos`} />
         <Row href="/admin/horario" icon={I.horario} title="Horario semanal" hint="Franjas para reservar" />
+        <Row href="/admin/ajustes" icon={I.avisos} title="Avisos a clientes" hint="Email para quien lleva tiempo sin venir" />
         <Row href="/admin/bloqueos" icon={I.bloqueos} title="Bloquear horas o días" hint={bloqueos ? `${bloqueos} bloqueos` : "Vacaciones, descansos…"} />
       </ul>
     </main>
