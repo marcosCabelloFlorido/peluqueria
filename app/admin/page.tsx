@@ -175,11 +175,7 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
           <h1 className="display text-4xl sm:text-5xl first-letter:uppercase">{title}</h1>
           <p className="text-g4 mt-1 first-letter:uppercase">{sub}</p>
         </div>
-        <div className="grid grid-cols-[auto_auto_1fr] sm:flex sm:flex-wrap items-center gap-2">
-          <Link href={q(today)} className="chip !min-h-10 !px-4 justify-center">Hoy</Link>
-          <Link href={q(shift(today, 1))} className="chip !min-h-10 !px-4 justify-center">Mañana</Link>
-          <AdminDate value={day} view={view} />
-        </div>
+        <AdminDate value={day} view={view} today={today} counts={Object.fromEntries(countBy)} />
       </div>
 
       <div className="mt-6 flex items-center gap-2">
@@ -188,10 +184,10 @@ export default async function Admin({ searchParams }: { searchParams: Promise<{ 
           {strip.map((d) => {
             const n = countBy.get(d) ?? 0;
             return (
-              <Link key={d} href={q(d, "day")} className="dchip" aria-current={d === day && view === "day" ? "date" : undefined}>
-                <small>{fmt(localToDate(d, "12:00"), "EEE").replace(".", "")}</small>
+              <Link key={d} href={q(d, "day")} className={`dchip ${d === today ? "is-today" : ""}`} aria-current={d === day && view === "day" ? "date" : undefined}>
+                <small>{fmt(localToDate(d, "12:00"), "EEEEE").toUpperCase()}</small>
                 <b>{Number(d.slice(8))}</b>
-                <i>{n ? `${n} ${n === 1 ? "cita" : "citas"}` : ""}</i>
+                <i aria-label={n ? `${n} ${n === 1 ? "cita" : "citas"}` : undefined}>{Array.from({ length: Math.min(n, 4) }, (_, k) => <span key={k} />)}</i>
               </Link>
             );
           })}
