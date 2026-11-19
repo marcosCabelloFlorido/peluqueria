@@ -96,15 +96,15 @@ function Form() {
   }
 
   const errProps = { "aria-invalid": !!err, "aria-describedby": err ? "auth-err" : undefined };
-  const title = { otp: "Entrar", code: "Introduce el código", in: "Entrar con contraseña", up: "Crear cuenta", reset: "Recuperar acceso" }[mode];
+  const title = { otp: "Entrar o crear cuenta",code: "Introduce el código", in: "Entrar con contraseña", up: "Crear cuenta", reset: "Recuperar acceso" }[mode];
   const lead = {
-    otp: "Te enviamos un código por email. Sin contraseñas.",
+    otp: "Escribe tu email y te enviamos un código. Si es tu primera vez, creamos tu cuenta al momento. Sin contraseñas.",
     code: "Mira tu bandeja de entrada (y el spam).",
     in: "Con tu cuenta ves y gestionas tus citas, y reservar es más rápido.",
     up: "Con tu cuenta ves y gestionas tus citas, y reservar es más rápido.",
     reset: "Te enviaremos un enlace por email.",
   }[mode];
-  const cta = { otp: "Enviarme el código", code: "Entrar", in: "Entrar", up: "Crear cuenta", reset: "Enviar enlace" }[mode];
+  const cta = { otp: "Continuar con mi email",code: "Entrar", in: "Entrar", up: "Crear cuenta", reset: "Enviar enlace" }[mode];
 
   return (
     <main className="mx-auto max-w-md min-h-dvh px-6 pt-[calc(2rem+env(safe-area-inset-top))] pb-10">

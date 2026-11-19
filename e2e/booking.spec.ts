@@ -27,8 +27,8 @@ test("invitado reserva sin cuenta y luego entra para ver su cita", async ({ page
   await expect(page.getByRole("heading", { name: "¡Cita confirmada!" })).toBeVisible();
 
   // 4. Modal opcional de login → crear cuenta → la cita queda en "Mis citas"
-  await expect(page.getByRole("heading", { name: "¿Quieres iniciar sesión?" })).toBeVisible();
-  await page.getByRole("link", { name: "Iniciar sesión" }).click();
+  await expect(page.getByRole("heading", { name: "Crea tu cuenta gratis" })).toBeVisible();
+  await page.getByRole("link", { name: "Crear cuenta" }).click();
   await expect(page).toHaveURL(/\/login/);
   await page.getByRole("button", { name: "Entrar con contraseña" }).click();
   await page.getByRole("tab", { name: "Crear cuenta" }).click();
