@@ -45,5 +45,6 @@ playwright-report
 .open-next
 .wrangler
 .dev.vars
-.claude/
+.claude/*
+!.claude/agents/
 graphify-out/
