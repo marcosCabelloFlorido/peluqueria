@@ -8,6 +8,7 @@ npx supabase start        # Postgres + Auth en Docker (aplica supabase/migration
 npm run dev               # http://localhost:3000
 npx supabase db reset     # reinicia BD con seed
 npm test                  # huecos (Vitest)
+npm run e2e:local         # e2e solo contra Supabase local (comprueba antes)
 ```
 Emails de Supabase Auth locales: http://127.0.0.1:54324 (Mailpit). Studio: http://127.0.0.1:54323.
 Hacer admin a un usuario:
@@ -26,7 +27,7 @@ Tres agentes con roles separados (Claude Code):
 |---|---|---|
 | Orquestador | [`/ciclo`](.claude/skills/ciclo/SKILL.md) (+ [`AGENTS.md`](AGENTS.md) para el estilo) | Recibe la tarea, reparte, hace commit. No programa. |
 | Develop | [`.claude/agents/develop.md`](.claude/agents/develop.md) | Subagente que programa siguiendo la estructura real del repo. |
-| Testing | [`.claude/agents/testing.md`](.claude/agents/testing.md) | Subagente de solo revisión. Aplica [`docs/agents/DIRECTRICES.md`](docs/agents/DIRECTRICES.md) y ejecuta lint, typecheck, tests y build. |
+| Testing | [`.claude/agents/testing.md`](.claude/agents/testing.md) | Subagente de solo revisión. Aplica [`docs/agents/DIRECTRICES.md`](docs/agents/DIRECTRICES.md) y ejecuta lint, typecheck, tests, e2e local (si aplica) y build. Usa opus en cambios de auth, RLS, cobros o secretos. |
 
 Ciclo (se activa con `/ciclo <tarea>`): Orquestador → `develop` → `testing` → si hay fallos (lista numerada con regla `D-xx` o punto del criterio `CA-n`), vuelven a `develop` → se repite hasta `PASS` → commit. Máximo 5 rondas. Ejemplo real en [`docs/agents/REGISTRO.md`](docs/agents/REGISTRO.md).
 

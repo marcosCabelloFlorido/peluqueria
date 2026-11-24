@@ -52,4 +52,5 @@ playwright-report
 !.claude/skills/
 .claude/skills/*
 !.claude/skills/ciclo/
+# .claude/skills-disabled/ queda ignorada por .claude/*
 graphify-out/

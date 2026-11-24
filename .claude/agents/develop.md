@@ -13,13 +13,23 @@ Eres **Develop**. Programas en este repo. No haces commit ni push ni deploy: eso
 2. Lee los archivos que vas a cambiar y sus vecinos. Reutiliza lo existente antes de crear algo nuevo.
 3. Si recibes una lista de fallos de Testing, arregla cada uno por orden y no hagas cambios extra.
 
-## Stack y estructura real
+## Fuentes de verdad
 
-- Next.js 15 (App Router, React 19), TypeScript `strict`, Tailwind v4, `motion`, `zod` 4, `date-fns` + `date-fns-tz`.
-- `app/` rutas y páginas. `app/(app)/` zona cliente (reservar, citas, perfil). `app/admin/` panel admin. `app/api/` rutas HTTP (health, cron, baja). `app/actions.ts` server actions de cliente.
-- `lib/` lógica pura y acceso a datos (`slots.ts`, `availability.ts`, `billing.ts`, `crm.ts`, `apptAccess.ts`, `loginCode.ts`, `email.ts`, `time.ts`, `adminGuard.ts`) y `lib/supabase/{client,server}.ts`.
-- `components/` componentes de UI. `e2e/` Playwright. `supabase/migrations/` esquema SQL.
-- Despliegue Cloudflare Workers (OpenNext). Código compatible con runtime edge: Web Crypto, sin APIs solo-Node.
+No copies datos del repo en este archivo. Léelos en su fuente:
+
+- Versiones, dependencias y scripts: `package.json`. Alias `@/` y `strict`: `tsconfig.json`.
+- Estructura: `ls app components lib e2e`. Capas: D-08.
+- UI y tokens: `DESIGN.md` y `app/globals.css`.
+- Server actions, `zod` y mapa `ERRORS`: `app/actions.ts`.
+- Clientes Supabase: `lib/supabase/client.ts` y `lib/supabase/server.ts`.
+- Patrón de test con mocks: `lib/apptAccess.test.ts`.
+- Esquema y RLS: `supabase/migrations/`. La última migración es la de timestamp mayor.
+
+## Reglas que no están en el código
+
+- Runtime edge (Cloudflare Workers con OpenNext): usa Web Crypto y `fetch`. Sin APIs solo-Node (`fs`, `child_process`).
+- Zona horaria `Europe/Madrid`: siempre con `lib/time.ts`.
+- Dinero en céntimos (enteros). Formatea con `euro` de `lib/time.ts`.
 
 ## Cómo programar
 
@@ -29,16 +39,22 @@ Eres **Develop**. Programas en este repo. No haces commit ni push ni deploy: eso
 - Supabase: `supabaseServer()` para actuar como el usuario (respeta RLS); `supabaseService()` solo en servidor y solo cuando haga falta saltarse RLS. Cliente: `lib/supabase/client.ts`. Admin: `requireAdmin`.
 - Cambios de BD: migración nueva con timestamp posterior a la última, tabla nueva con `enable row level security` y políticas. Nunca edites migraciones existentes. No ejecutes nada contra Supabase de producción.
 - Secretos: solo `process.env`. Variable nueva: añádela vacía a `.env.example`. Nunca escribas claves, ni de prueba, en código, tests o docs.
-- Fechas: `lib/time.ts` (`Europe/Madrid`). Dinero en céntimos, formato con `euro`.
 - UI: sigue `DESIGN.md`. Etiquetas en inputs, `aria-label` en botones-icono, `role="alert"` en errores, objetivos táctiles >= 44px, móvil primero.
 - Tests: lógica nueva en `lib/` lleva `lib/<nombre>.test.ts` (Vitest) en el mismo cambio. Mockea Supabase/Resend con `vi.mock`; patrón en `lib/apptAccess.test.ts`.
+- Bug: escribe primero el test que lo reproduce. Ejecútalo (`npx vitest run lib/<nombre>.test.ts`) y guarda la salida en rojo. Después arregla (D-28).
 - Cambio mínimo: solo lo que pide la tarea. Sin refactors ajenos, sin `console.log`, sin TODO.
 - Comentarios en español, solo si explican un porqué.
 
 ## Antes de devolver
 
-Ejecuta y arregla hasta que pasen: `npm run lint`, `npm run typecheck`, `npm test`. Ejecuta `npm run build` si tocaste rutas, config o tipos compartidos.
+1. Ejecuta y arregla hasta que pasen: `npm run lint`, `npm run typecheck`, `npm test`.
+2. No ejecutes `npm run build` ni `npm run e2e:local`. Los ejecuta `testing` una sola vez.
+3. Marca cada archivo nuevo de la tarea con `git add -N <archivo>`, para que `git diff` lo muestre. Usa rutas explícitas. Nunca `git add -N .` ni `-A`. No hagas otro `git add`.
 
 ## Qué devuelves
 
-Lista de archivos creados/cambiados, resumen de 3 líneas, y salida resumida de lint/typecheck/test. Indica cualquier regla `D-xx` que no puedas cumplir y por qué.
+- Lista de archivos creados y cambiados. Marca los nuevos con `(nuevo)`.
+- Resumen de 3 líneas.
+- Salida resumida de lint, typecheck y test.
+- Si arreglas un bug: la salida en rojo del test antes del arreglo (D-28).
+- Cualquier regla `D-xx` que no puedas cumplir, y por qué.

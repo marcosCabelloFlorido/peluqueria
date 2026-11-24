@@ -25,6 +25,9 @@ process.stdin.on("end", () => {
     [/\b(npm|pnpm|yarn)\s+(i|install|add|remove|uninstall|update|ci)\b/, "cambio de dependencias"],
     [/--fix\b|--write\b/, "autocorrección (--fix/--write)"],
     [/\bnpm\s+run\s+(deploy|preview)\b/, "deploy"],
+    [/\bplaywright\s+(test|install)\b|\bnpm\s+run\s+e2e(?!:local)\b/, "e2e solo con npm run e2e:local (comprueba que Supabase es local)"],
+    [/\be2e:local\b.*\s(-u|--update-snapshots)\b/, "actualizar snapshots escribe archivos"],
+    [/(^|[;&|(]\s*)(npx\s+)?supabase\s+(?!status\b)\S/, "supabase solo admite status en testing"],
     [/\b(Set-Content|Out-File|Add-Content|Remove-Item|New-Item|Move-Item|Copy-Item)\b/i, "cmdlet que escribe"],
   ];
 

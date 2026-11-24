@@ -16,12 +16,23 @@ Tarea: $ARGUMENTS
    - Ronda 2 en adelante: continúa el mismo agente con `SendMessage` en lugar de lanzar uno nuevo, para que conserve el contexto.
 3. **testing.** Envía siempre estas tres cosas:
    - la tarea y el criterio de aceptación;
-   - la lista de archivos que tocó `develop` y su resumen;
+   - el informe completo de `develop` (archivos, resumen y salida en rojo si es un bug);
    - en rondas posteriores, la lista de fallos de la ronda anterior.
+
+   **Modelo de `testing`.** Mira la lista de `develop` y `git diff --stat`. Lanza `testing` con `model: "opus"` si el cambio toca alguno de estos puntos:
+
+   - login o auth: `app/login/`, `app/auth/`, `lib/loginCode.ts`, `lib/apptAccess.ts`;
+   - `middleware.ts` o `lib/adminGuard.ts`;
+   - `supabase/migrations/` (RLS);
+   - `lib/billing.ts`;
+   - `app/api/`;
+   - secretos: `.env.example`, `process.env` nuevo, `supabaseService()` nuevo.
+
+   En otro caso, no pases `model`: usa `sonnet` del agente. Si una ronda usa `opus`, las rondas siguientes del ciclo también.
 4. `testing` responde `PASS` o una lista numerada de fallos.
    - Fallos: reenvíalos tal cual a `develop` y vuelve al paso 3.
    - `PASS`: sigue al paso 5.
-5. **Commit** pequeño, Conventional Commits en español. Incluye solo los archivos de la tarea. Añade la entrada de `docs/agents/REGISTRO.md` en el mismo commit.
+5. **Commit** pequeño, Conventional Commits en español. Incluye solo los archivos de la tarea. Añade la entrada de `docs/agents/REGISTRO.md` en el mismo commit. Indica en la entrada si `testing` usó `opus` y si el e2e se ejecutó o por qué no.
 6. **Informe** al usuario: qué cambió, rondas necesarias, resultado final.
 
 Límite: máximo 5 rondas develop↔testing. Si no llega a PASS, para y pregunta al usuario.
