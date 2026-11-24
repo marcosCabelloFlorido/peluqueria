@@ -47,4 +47,9 @@ playwright-report
 .dev.vars
 .claude/*
 !.claude/agents/
+!.claude/hooks/
+!.claude/settings.json
+!.claude/skills/
+.claude/skills/*
+!.claude/skills/ciclo/
 graphify-out/

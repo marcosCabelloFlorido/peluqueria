@@ -24,11 +24,11 @@ Tres agentes con roles separados (Claude Code):
 
 | Agente | Fichero | Rol |
 |---|---|---|
-| Orquestador | [`CLAUDE.md`](CLAUDE.md) (+ [`AGENTS.md`](AGENTS.md) para el estilo) | Recibe la tarea, reparte, hace commit. No programa. |
+| Orquestador | [`/ciclo`](.claude/skills/ciclo/SKILL.md) (+ [`AGENTS.md`](AGENTS.md) para el estilo) | Recibe la tarea, reparte, hace commit. No programa. |
 | Develop | [`.claude/agents/develop.md`](.claude/agents/develop.md) | Subagente que programa siguiendo la estructura real del repo. |
 | Testing | [`.claude/agents/testing.md`](.claude/agents/testing.md) | Subagente de solo revisión. Aplica [`docs/agents/DIRECTRICES.md`](docs/agents/DIRECTRICES.md) y ejecuta lint, typecheck, tests y build. |
 
-Ciclo: Orquestador → `develop` → `testing` → si hay fallos (lista numerada con regla `D-xx`), vuelven a `develop` → se repite hasta `PASS` → commit. Máximo 5 rondas. Ejemplo real en [`docs/agents/REGISTRO.md`](docs/agents/REGISTRO.md).
+Ciclo (se activa con `/ciclo <tarea>`): Orquestador → `develop` → `testing` → si hay fallos (lista numerada con regla `D-xx` o punto del criterio `CA-n`), vuelven a `develop` → se repite hasta `PASS` → commit. Máximo 5 rondas. Ejemplo real en [`docs/agents/REGISTRO.md`](docs/agents/REGISTRO.md).
 
 ## Prueba
 
